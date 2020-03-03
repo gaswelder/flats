@@ -1,0 +1,9 @@
+node_modules
+*.cache
+dist
+.env
+*.log
+*.generated.js
+psql.sh
+.vscode
+*.json

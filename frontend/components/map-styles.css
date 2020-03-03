@@ -1,0 +1,61 @@
+.offer-icon > div {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: 1px 1px 2px #a7add0;
+  border: 1px solid #5c7fa9;
+}
+
+.cluster-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 1px 1px 2px #a7add0;
+  border: 1px solid #5c7fa9;
+  display: flex;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.cluster-icon > div {
+  flex: 1;
+}
+
+.cluster-icon span {
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diff-icon {
+  font-weight: bold;
+  font-size: 14px;
+}
+.diff-icon.down {
+  color: green;
+  text-shadow: 0 0 3px #fefffe;
+}
+.diff-icon.up {
+  color: red;
+}
+
+.diff-cluster {
+  font-weight: bold;
+  font-size: 14px;
+  background: white;
+  width: min-content;
+}
+.diff-cluster.down {
+  color: green;
+  text-shadow: 0 0 3px #fefffe;
+}
+.diff-cluster.up {
+  color: red;
+}
