@@ -7,7 +7,7 @@ import { createApp } from "./http.mjs";
 import { getdb, migrate } from "./core/storage.mjs";
 import { pgx } from "./lib/pgx.mjs";
 
-dotenv.config({ path: "../.env" });
+dotenv.config();
 
 const getMailer = (spec, emailFrom) => {
   if (!emailFrom) {

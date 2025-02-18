@@ -1,7 +1,6 @@
-backend/node_modules
-frontend/node_modules
 .cache
-worker
+backend/node_modules
+frontend/.cache
+frontend/dist
+frontend/node_modules
 .env
-dump*
-*.sh

@@ -51,7 +51,7 @@ export const createApp = (core) => {
       next();
     })
     .use(cors())
-    .use(express.static("../frontend/dist"))
+    .use(express.static("frontend/dist"))
     .get("/admin", adminAuth, async (req, res) => {
       res.send(await admin(core));
     })
