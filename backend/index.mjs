@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import pg from "pg";
 import service from "./core/index.mjs";
 import mailjet from "node-mailjet";
-import log from "./lib/slog.mjs";
+import { log } from "./lib/slog.mjs";
 import { createApp } from "./http.mjs";
 import { getdb, migrate } from "./core/storage.mjs";
 import { pgx } from "./lib/pgx.mjs";
