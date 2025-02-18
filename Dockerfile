@@ -2,14 +2,11 @@ FROM public.ecr.aws/docker/library/node
 
 WORKDIR /home/app
 
-COPY frontend/package.json frontend/yarn.lock frontend/
-COPY backend/package.json backend/yarn.lock backend/
-
-RUN cd frontend && yarn && cd ..
-RUN cd backend && yarn && cd ..
+COPY package.json yarn.lock ./
+RUN yarn
 
 COPY frontend frontend
-RUN cd frontend && yarn build && cd ..
+RUN yarn build-fe
 
 COPY backend backend
 

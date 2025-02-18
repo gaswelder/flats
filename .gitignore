@@ -6,4 +6,3 @@ dist
 *.generated.js
 psql.sh
 .vscode
-*.json
