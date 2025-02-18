@@ -108,10 +108,32 @@ const serve = async (pool, srv, storage, mailer, adminEmail) => {
   }, 1000 * 3600 * 12);
 };
 
+const pruneSnapshots = async (storage) => {
+  // For each date, keep only the latest snapshot and delete others.
+  // Don't need hour presision in snapshots.
+  const tss = await storage.getSnapshotTimes();
+  const buckets = Object.groupBy(tss, (ts) =>
+    ts.toISOString().substring(0, 10)
+  );
+  const del = batcher(100, storage.deleteSnapshots);
+  for (const [k, v] of Object.entries(buckets)) {
+    console.log(k, v);
+    if (v.length == 1) continue;
+    v.sort((a, b) => b.getTime() - a.getTime());
+    await del.add(...v.slice(1, v.length));
+  }
+  await del.end();
+};
+
 const cli = async (pool, srv, cmd) => {
   switch (cmd) {
     case "setup":
       await migrate(pool, log);
+      break;
+    case "tmp":
+      const storage = getdb(pool);
+      await pruneSnapshots(storage);
+      pool.end();
       break;
     case "dump":
       await srv.dump();

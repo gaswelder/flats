@@ -337,5 +337,14 @@ export const getdb = (pool) => {
     async addSnapshotLog(name, count) {
       await db.batchInsert("logs", [{ t: new Date(), count, name }]);
     },
+
+    async getSnapshotTimes() {
+      const r = await db.q`select distinct ts from snapshots`;
+      return r.rows.map((x) => x.ts);
+    },
+
+    async deleteSnapshots(tss) {
+      await db.query(`delete from snapshots where ts = any($1)`, [tss]);
+    },
   };
 };
