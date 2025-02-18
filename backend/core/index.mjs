@@ -63,16 +63,6 @@ export default (db, storage, mailer, log, datadir) => {
         .catch((err) => {
           log.error(`notification failed: ${err.message}`, { err });
         });
-
-      // Write a new full snapshot in background.
-      storage
-        .saveSnapshot(time)
-        .then(() => {
-          log.info("saved the snapshot");
-        })
-        .catch((err) => {
-          log.error("failed to save the snapshot: " + err.message, { err });
-        });
     },
 
     /**

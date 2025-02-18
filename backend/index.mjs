@@ -6,6 +6,7 @@ import { log } from "./lib/slog.mjs";
 import { createApp } from "./http.mjs";
 import { getdb, migrate } from "./core/storage.mjs";
 import { pgx } from "./lib/pgx.mjs";
+import { batcher } from "./lib/batcher.mjs";
 
 dotenv.config();
 
@@ -82,20 +83,8 @@ const serve = async (pool, srv, storage, mailer, adminEmail) => {
     log.info("web server started on port " + PORT);
   });
 
-  setInterval(async () => {
-    const ts = new Date();
-    const y = ts.getFullYear();
-    const m = (ts.getMonth() + 1).toString().padStart(2, "0");
-    const currentMonth = `${y}-${m}`;
-
-    const dumpMonth = await storage.getValue("lastDumpMonth");
-    if (currentMonth == dumpMonth) {
-      return;
-    }
+  scheduleFirstOfMonth(storage, "lastDumpMonth", async () => {
     const stats = await srv.dump();
-    await storage.setValue("lastDumpMonth", currentMonth);
-
-    // notify
     if (adminEmail) {
       mailer.send(
         adminEmail,
@@ -105,7 +94,56 @@ const serve = async (pool, srv, storage, mailer, adminEmail) => {
           .join("")
       );
     }
+  });
+
+  scheduleDaily(storage, "lastSnapshotDate", async () => {
+    try {
+      const t = Date.now();
+      await storage.saveSnapshot();
+      log.info("saved the snapshot", { duration: Date.now() - t });
+    } catch (err) {
+      log.error("snapshot failed: " + err.message, { err });
+    }
+  });
+};
+
+const getStamp = (type) => {
+  const ts = new Date();
+  const y = ts.getFullYear();
+  const m = (ts.getMonth() + 1).toString().padStart(2, "0");
+  const d = ts.getDate().toString().padStart(2, "0");
+  switch (type) {
+    case "monthly":
+      return `${y}-${m}`;
+    case "daily":
+      return `${y}-${m}-${d}`;
+    default:
+      throw new Error("unknown stamp type: " + type);
+  }
+};
+
+const scheduleFirstOfMonth = (storage, key, f) => {
+  setInterval(async () => {
+    const now = getStamp("monthly");
+    const last = await storage.getValue(key);
+    if (now == last) {
+      return;
+    }
+    await f();
+    await storage.setValue(key, now);
   }, 1000 * 3600 * 12);
+};
+
+const scheduleDaily = (storage, key, f) => {
+  setInterval(async () => {
+    const now = getStamp("daily");
+    const last = await storage.getValue(key);
+    if (now == last) {
+      return;
+    }
+    await f();
+    await storage.setValue(key, now);
+  }, 1000 * 3600);
 };
 
 const pruneSnapshots = async (storage) => {

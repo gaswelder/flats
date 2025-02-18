@@ -192,7 +192,8 @@ export const getdb = (pool) => {
       ]);
     },
 
-    async saveSnapshot(time) {
+    async saveSnapshot() {
+      const time = new Date();
       await db.q`insert into price_snapshots (ts, id, price, original_price)
         select ${time}, b.id, b.price, b.original_price from current_offers b`;
     },
@@ -200,7 +201,8 @@ export const getdb = (pool) => {
     mergeSnapshot(tick, newOffers, name, time) {
       return db.transaction(async (tr) => {
         // Compare with the last snapshot from this worker.
-        const r1 = await tr.q`select * from current_offers where snapshot_name = ${name}`;
+        const r1 =
+          await tr.q`select * from current_offers where snapshot_name = ${name}`;
         const oldOffers = r1.rows.map(Offer.parseFromDB);
         tick("get_current_offers");
 
