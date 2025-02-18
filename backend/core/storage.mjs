@@ -105,6 +105,14 @@ const patches = [
       await conn.q`alter table snapshots rename to price_snapshots`;
     },
   },
+  {
+    v: 20,
+    async f(conn) {
+      await conn.q`create table history_squares (ts timestamptz, x int, y int, sum int, count int);
+        create index on history_squares(ts, x, y);
+      `;
+    },
+  },
 ];
 
 export const migrate = async (pool0, logger) => {
@@ -133,9 +141,7 @@ export const migrate = async (pool0, logger) => {
 };
 
 const getValue = async (t, name) => {
-  const {
-    rows,
-  } = await t.query(
+  const { rows } = await t.query(
     `select v from meta where k = $1 order by ts desc limit 1`,
     [name]
   );
@@ -159,6 +165,13 @@ const getVersion = async (t) => {
 
 const setVersion = async (t, v) => {
   await setValue(t, "version", v);
+};
+
+const squareCoords = (lat, lon) => {
+  // 1 deg lat ~ 100 km
+  const x = Math.floor((lon + 90) * 100);
+  const y = Math.floor((lat + 180) * 100);
+  return [x, y];
 };
 
 export const getdb = (pool) => {
@@ -196,6 +209,7 @@ export const getdb = (pool) => {
       const time = new Date();
       await db.q`insert into price_snapshots (ts, id, price, original_price)
         select ${time}, b.id, b.price, b.original_price from current_offers b`;
+      return time;
     },
 
     mergeSnapshot(tick, newOffers, name, time) {
@@ -341,12 +355,55 @@ export const getdb = (pool) => {
     },
 
     async getSnapshotTimes() {
-      const r = await db.q`select distinct ts from snapshots`;
+      const r = await db.q`select distinct ts from price_snapshots`;
       return r.rows.map((x) => x.ts);
     },
 
+    async *getSnapshots() {
+      let cursor = new Date("2000-01-01");
+      for (;;) {
+        let r =
+          await db.q`select distinct ts from price_snapshots where ts > ${cursor} order by ts limit 1000`;
+        if (r.rows.length == 0) break;
+        const tss = r.rows.map((row) => row.ts);
+        for (const ts of tss) {
+          yield { ts };
+          cursor = ts;
+        }
+      }
+    },
+
+    async generateSnapshotSquares(ts) {
+      // Skip if the squares already exist for this snapshot.
+      let r =
+        await db.q`select * from history_squares where ts = ${ts} limit 1`;
+      if (r.rows.length > 0) {
+        return "exists";
+      }
+
+      r = await db.q`select * from price_snapshots join offers using (id)
+          where ts = ${ts}`;
+      const offers = r.rows;
+
+      const squares = {};
+      for (const o of offers) {
+        const [x, y] = squareCoords(o.lat, o.lon);
+        const key = [x, y].join(",");
+        if (!squares[key]) {
+          squares[key] = { ts, x, y, sum: 0, count: 0 };
+        }
+        const s = squares[key];
+        s.sum += o.price;
+        s.count += 1;
+      }
+      await db.transaction(async (conn) => {
+        await conn.batchInsert("history_squares", Object.values(squares));
+      });
+      return Object.keys(squares).length;
+    },
+
     async deleteSnapshots(tss) {
-      await db.query(`delete from snapshots where ts = any($1)`, [tss]);
+      await db.query(`delete from price_snapshots where ts = any($1)`, [tss]);
     },
   };
 };

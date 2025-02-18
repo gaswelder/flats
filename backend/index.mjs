@@ -7,6 +7,7 @@ import { createApp } from "./http.mjs";
 import { getdb, migrate } from "./core/storage.mjs";
 import { pgx } from "./lib/pgx.mjs";
 import { batcher } from "./lib/batcher.mjs";
+import { timer } from "./timer.mjs";
 
 dotenv.config();
 
@@ -98,9 +99,13 @@ const serve = async (pool, srv, storage, mailer, adminEmail) => {
 
   scheduleDaily(storage, "lastSnapshotDate", async () => {
     try {
-      const t = Date.now();
-      await storage.saveSnapshot();
-      log.info("saved the snapshot", { duration: Date.now() - t });
+      const tick = timer(log);
+      const ts = await storage.saveSnapshot();
+      tick("save_snapshot");
+      log.info("saved the snapshot");
+      const n = await storage.generateSnapshotSquares(ts);
+      tick("generate_squares", n);
+      log.info("generated squares");
     } catch (err) {
       log.error("snapshot failed: " + err.message, { err });
     }
@@ -155,23 +160,30 @@ const pruneSnapshots = async (storage) => {
   );
   const del = batcher(100, storage.deleteSnapshots);
   for (const [k, v] of Object.entries(buckets)) {
-    console.log(k, v);
     if (v.length == 1) continue;
     v.sort((a, b) => b.getTime() - a.getTime());
+    console.log(k, v);
     await del.add(...v.slice(1, v.length));
   }
   await del.end();
 };
 
 const cli = async (pool, srv, cmd) => {
+  const storage = getdb(pool);
   switch (cmd) {
     case "setup":
       await migrate(pool, log);
       break;
-    case "tmp":
-      const storage = getdb(pool);
+    case "prune-snapshots":
       await pruneSnapshots(storage);
-      pool.end();
+      break;
+    case "create-squares":
+      for await (const s of storage.getSnapshots()) {
+        const n = await storage.generateSnapshotSquares(s.ts);
+        if (n != "exists") {
+          console.log(s.ts, n);
+        }
+      }
       break;
     case "dump":
       await srv.dump();
@@ -181,6 +193,7 @@ const cli = async (pool, srv, cmd) => {
       process.stderr.write(`Unknown command: ${cmd}\n`);
       process.exit(1);
   }
+  pool.end();
 };
 
 main();
