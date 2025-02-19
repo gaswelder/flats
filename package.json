@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "node --watch backend/index.mjs",
     "test-fe": "mocha backend/*.test.mjs",
-    "build-fe": "cd frontend && parcel build --public-url ./ index.html",
-    "dev-fe": "cd frontend && API_URL='http://localhost:8000/' yarn parcel index.html"
+    "build0-fe": "cd frontend && parcel build --public-url ./ index.html",
+    "dev-fe": "cd frontend && API_URL='http://localhost:8000/' yarn parcel index.html",
+    "build-fe": "./build-fe.sh"
   },
   "browserslist": [
     "since 2024"
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@babel/core": "^7.10.3",
     "@babel/preset-react": "^7.10.1",
+    "esbuild": "^0.25.0",
     "eslint": "^8.24.0",
     "eslint-plugin-react": "^7.31.8",
     "eslint-plugin-react-hooks": "^4.6.0",

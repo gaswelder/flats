@@ -21,7 +21,8 @@ export const loadFilter = () =>
 export const saveFilter = (filter) => setSetting("filter", filter);
 
 const fetchJSON = (path, params) => {
-  const url = (process.env.API_URL || "") + path;
+  // const url = (process.env.API_URL || "") + path;
+  const url = "./" + path;
   return fetch(url, params).then((r) => r.json());
 };
 
