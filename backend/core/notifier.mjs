@@ -58,11 +58,6 @@ const notifyOne = async (mailer, newOffers, now, dbx, subscriber) => {
       })
     );
   }
-  for (const m of matches) {
-    await dbx.q`insert into suggested_offers (subscriber_id, offer_id)
-      values (${subscriber.id}, ${m.offer.id})
-      on conflict (subscriber_id, offer_id) do nothing`;
-  }
 };
 
 const formatDateTime = (date) => formatDate(date) + ", " + formatTime(date);

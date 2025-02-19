@@ -317,85 +317,9 @@ describe("backend", () => {
     assert.deepEqual(t.popMail("foo@example.com"), [
       {
         subject: "Flats update: 300 (300 dollars) 1r, R = 0 m",
-        body:
-          "$300 (300 dollars) 1r at street name, 12, R = 0 m\nhttps://www.example.com/1\nroute (YA): https://yandex.by/maps/?rtext=20,30~20,30&rtt=mt\nroute (GO): https://www.google.com/maps/dir/?api=1&origin=20,30&destination=20,30\n",
+        body: "$300 (300 dollars) 1r at street name, 12, R = 0 m\nhttps://www.example.com/1\nroute (YA): https://yandex.by/maps/?rtext=20,30~20,30&rtt=mt\nroute (GO): https://www.google.com/maps/dir/?api=1&origin=20,30&destination=20,30\n",
       },
     ]);
-  });
-
-  it("puts offers into the subscriber's list", async () => {
-    const t = await setup();
-    await t.service.addSubscriber({
-      email: "foo@example.com",
-      lat: 20,
-      lon: 30,
-      max_price: 400,
-      max_radius: 1000,
-    });
-
-    await t.service.addSnapshot(
-      "city1",
-      [
-        {
-          id: "1",
-          price: 300,
-          originalPrice: "300 dollars",
-          lat: 20.0,
-          lon: 30.0,
-          rooms: 1,
-          address: "street name, 12",
-          url: "https://www.example.com/1",
-        },
-      ],
-      "2023-08-17T01:06:00.000Z"
-    );
-    await timers.setTimeout(100);
-    const r = await t.service.getSuggestedOffers("foo@example.com");
-    assert.deepEqual(r, [
-      {
-        id: "1",
-        price: 300,
-        originalPrice: "300 dollars",
-        lat: 20.0,
-        lon: 30.0,
-        rooms: 1,
-        address: "street name, 12",
-        url: "https://www.example.com/1",
-        t: "2023-08-17T01:06:00.000Z",
-      },
-    ]);
-  });
-
-  it("suggested offers can be archived", async () => {
-    const t = await setup();
-    await t.service.addSubscriber({
-      email: "foo@example.com",
-      lat: 20,
-      lon: 30,
-      max_price: 400,
-      max_radius: 1000,
-    });
-
-    await t.service.addSnapshot(
-      "city1",
-      [
-        {
-          id: "1",
-          price: 300,
-          originalPrice: "300 dollars",
-          lat: 20.0,
-          lon: 30.0,
-          rooms: 1,
-          address: "street name, 12",
-          url: "https://www.example.com/1",
-        },
-      ],
-      "2023-08-17T01:06:00.000Z"
-    );
-    await timers.setTimeout(100);
-    await t.service.archiveSuggestedOffers("foo@example.com", ["1"]);
-    const r = await t.service.getSuggestedOffers("foo@example.com");
-    assert.deepEqual(r, []);
   });
 
   it("logs updates", async () => {

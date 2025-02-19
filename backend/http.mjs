@@ -100,23 +100,6 @@ export const createApp = (core) => {
       })
     )
     .get(
-      "/api/suggested-offers",
-      serveJson(async (req) => {
-        const users = await core.getSubscribers();
-        const r = await core.getSuggestedOffers(users[0].email);
-        return r;
-      })
-    )
-    .post(
-      "/api/suggested-offers-archive",
-      express.json(),
-      serveJson(async (req) => {
-        const users = await core.getSubscribers();
-        await core.archiveSuggestedOffers(users[0].email, req.body.ids);
-        return null;
-      })
-    )
-    .get(
       `/api/counts`,
       serveJson(async (req) => {
         const filter = parseFilter(req);

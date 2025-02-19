@@ -113,6 +113,12 @@ const patches = [
       `;
     },
   },
+  {
+    v: 21,
+    async f(conn) {
+      await conn.q`drop table suggested_offers`;
+    },
+  },
 ];
 
 export const migrate = async (pool0, logger) => {

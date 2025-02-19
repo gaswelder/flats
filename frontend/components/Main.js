@@ -5,11 +5,10 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Clusters, InfoBox, SlippyMap } from "../rsm/index";
 import styled from "styled-components";
+import { Clusters, InfoBox, SlippyMap } from "../rsm/index";
 import {
   fetchOffers,
-  fetchSuggestedOffers,
   getSetting,
   loadFilter,
   login,
@@ -22,7 +21,6 @@ import { OfferMapTooltip } from "./OfferMapTooltip";
 import { OffersBox } from "./OffersBox";
 import { OffersFilter } from "./OffersFilter";
 import { OffersTable } from "./OffersTable";
-import { SelectedOffersMarkers } from "./SelectedOffersMarkers";
 import { Stats } from "./Stats";
 import { Window } from "./Window";
 import { useDebouncedCallback } from "./util";
@@ -250,45 +248,15 @@ const MainOk = () => {
         onWheel={$onWheel}
         onPinch={$onPinch}
       >
-        {tab == "suggestedOffers" ? (
-          <SelectedOffersMarkers />
-        ) : (
-          <>
-            <Clusters
-              threshold={30}
-              objects={$objects}
-              render={$renderCluster}
-            />
-            {selectedOffers && (
-              <InfoBox coords={selectedOffers.coords} onClick={stop}>
-                <OfferMapTooltip offers={selectedOffers.list} />
-              </InfoBox>
-            )}
-          </>
+        <Clusters threshold={30} objects={$objects} render={$renderCluster} />
+        {selectedOffers && (
+          <InfoBox coords={selectedOffers.coords} onClick={stop}>
+            <OfferMapTooltip offers={selectedOffers.list} />
+          </InfoBox>
         )}
       </SlippyMap>
       <div style={{ position: "absolute", left: 6, top: 6 }}>
-        {tab == "suggestedOffers" && (
-          <button
-            onClick={async () => {
-              const offers = await fetchSuggestedOffers();
-              const blob = new Blob([JSON.stringify(offers)], {
-                type: "application/json",
-              });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.setAttribute("href", url);
-              a.setAttribute("target", "_blank");
-              a.setAttribute("download", "offers.json");
-              a.click();
-            }}
-          >
-            Download
-          </button>
-        )}
-        {tab != "suggestedOffers" && (
-          <FilterControl filter={filter} onChange={setFilter} />
-        )}
+        <FilterControl filter={filter} onChange={setFilter} />
       </div>
       <LowerBar
         {...{
@@ -445,18 +413,6 @@ const LowerBar = ({
           }}
         >
           List
-        </MenuItem>
-        <MenuItem
-          active={tab == "suggestedOffers"}
-          onClick={() => {
-            if (tab == "suggestedOffers") {
-              setTab("");
-            } else {
-              setTab("suggestedOffers");
-            }
-          }}
-        >
-          Suggested offers
         </MenuItem>
         <MenuItem
           active={tab == "stats"}

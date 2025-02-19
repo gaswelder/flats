@@ -126,14 +126,6 @@ export const fetchOffers = (rooms, latBounds, lonBounds, maxPrice) => {
   );
 };
 
-export const fetchSuggestedOffers = () => fetchJSON(`api/suggested-offers`);
-export const archiveSuggestedOffers = (ids) =>
-  fetchJSON("api/suggested-offers-archive", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ids }),
-  });
-
 export const login = async (user, password) => {
   const r = await fetchJSON(`api/login`, {
     method: "POST",

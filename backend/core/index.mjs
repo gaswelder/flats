@@ -147,38 +147,6 @@ export default (db, storage, mailer, log, datadir) => {
       return storage.getSnapshotLogs();
     },
 
-    async getSuggestedOffers(email) {
-      const s = await storage.getSubscriberByEmail(email);
-      if (!s) {
-        throw new Error(`subscriber not found`);
-      }
-      const r = await db.q`select *
-        from suggested_offers a
-        join current_offers b on b.id = a.offer_id
-        where not archived and subscriber_id=${s.id}`;
-      return r.rows.map((row) => {
-        return {
-          address: row.address,
-          id: row.offer_id,
-          lat: row.lat,
-          lon: row.lon,
-          originalPrice: row.original_price,
-          t: row.ts.toISOString(),
-          url: row.url,
-          price: row.price,
-          rooms: row.rooms,
-        };
-      });
-    },
-
-    async archiveSuggestedOffers(email, ids) {
-      const s = await storage.getSubscriberByEmail(email);
-      if (!s) {
-        throw new Error(`subscriber not found`);
-      }
-      await db.q`update suggested_offers set archived = true where subscriber_id=${s.id} and offer_id=any(${ids})`;
-    },
-
     async dump() {
       return db.transaction(async (tr) => {
         let r = await tr.query(
