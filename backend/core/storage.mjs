@@ -314,42 +314,29 @@ export const getdb = (pool) => {
     },
 
     async getHistory(filter) {
-      const [
-        rmin,
-        rmax,
-      ] = await db.q`select min(ts), max(ts) from price_snapshots`.then((r) => [
-        r.rows[0].min,
-        r.rows[0].max,
-      ]);
-      const min = new Date(
-        rmin.toISOString().substring(0, "2023-08-17".length) + "T00:00:00.000Z"
-      );
-      min.setTime(min.getTime() + 1000 * 3600 * 24);
-      const max = new Date(
-        rmax.toISOString().substring(0, "2023-08-17".length) + "T00:00:00.000Z"
-      );
-      max.setTime(max.getTime() + 1000 * 3600 * 24);
-      const r = await db.q`
-        with dates as (select generate_series(
-          timestamp without time zone '${db.inject(min.toISOString())}',
-          timestamp without time zone '${db.inject(max.toISOString())}',
-          '1 day'
-        ) as d),
-        cuts as (
-            select dates.d, (select max(ts) from price_snapshots where ts <= dates.d) as ts
-            from dates
-        )
-        select cuts.ts, avg(price) as price, count(*)
-        from cuts
-        join price_snapshots using (ts)
-        join offers on offers.id = price_snapshots.id
-        where price > 0
-            and price < ${filter.maxPrice}
-            and offers.rooms in (${db.inject(filter.rooms.join(","))})
-            and offers.lat between ${filter.lat[0]} and ${filter.lat[1]}
-            and offers.lon between ${filter.lon[0]} and ${filter.lon[1]}
-        group by 1`;
-      return r.rows;
+      const [x1, y1] = squareCoords(filter.lat[0], filter.lon[0]);
+      const [x2, y2] = squareCoords(filter.lat[1], filter.lon[1]);
+
+      const r = await db.q`select * from history_squares
+      where x between ${x1} and ${x2}
+        and y between ${y1} and ${y2}`;
+
+      const gg = Object.groupBy(r.rows, (x) => x.ts);
+      return Object.entries(gg)
+        .map(([ts, v]) => {
+          let count = 0;
+          let sum = 0;
+          v.forEach((row) => {
+            count += row.count;
+            sum += row.sum;
+          });
+          return {
+            ts: v[0].ts,
+            price: sum / count,
+            count,
+          };
+        })
+        .sort((a, b) => a.ts.getTime() - b.ts.getTime());
     },
 
     async getSnapshotLogs() {
