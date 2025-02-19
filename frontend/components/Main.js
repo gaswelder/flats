@@ -15,6 +15,7 @@ import {
   saveFilter,
   setSetting,
 } from "../state";
+import { AreaHistory } from "./AreaHistory";
 import { FavoriteLocations } from "./FavoriteLocations";
 import { LoginForm } from "./LoginForm";
 import { OfferMapTooltip } from "./OfferMapTooltip";
@@ -23,6 +24,7 @@ import { OffersFilter } from "./OffersFilter";
 import { OffersTable } from "./OffersTable";
 import { Stats } from "./Stats";
 import { Window } from "./Window";
+import { Shy } from "./lib/Shy";
 import { useDebouncedCallback } from "./util";
 
 const MenuDiv = styled.div`
@@ -258,12 +260,31 @@ const MainOk = () => {
       <div style={{ position: "absolute", left: 6, top: 6 }}>
         <FilterControl filter={filter} onChange={setFilter} />
       </div>
+      <Shy
+        title="Area History"
+        contentWidth={500}
+        contentHeight={300}
+        content={() => {
+          return (
+            <div style={{ position: "relative", top: -25 }}>
+              <AreaHistory area={area} filter={filter} />
+            </div>
+          );
+        }}
+      />
+      <Shy
+        top={300}
+        title="Prices"
+        contentWidth={500}
+        contentHeight={200}
+        content={() => {
+          return <Stats offers={offers} />;
+        }}
+      />
       <LowerBar
         {...{
           tab,
           offers,
-          area,
-          filter,
           center,
           setCenter,
           setTab,
@@ -366,8 +387,6 @@ const FilterControl = ({ filter, onChange }) => {
 const LowerBar = ({
   tab,
   offers,
-  area,
-  filter,
   center,
   setCenter,
   setTab,
@@ -380,11 +399,6 @@ const LowerBar = ({
       {tab == "list" && (
         <Window>
           <OffersTable offers={offers} />
-        </Window>
-      )}
-      {tab == "stats" && (
-        <Window>
-          <Stats {...{ offers, area, filter }} />
         </Window>
       )}
       {tab == "location" && (
@@ -413,18 +427,6 @@ const LowerBar = ({
           }}
         >
           List
-        </MenuItem>
-        <MenuItem
-          active={tab == "stats"}
-          onClick={() => {
-            if (tab == "stats") {
-              setTab("");
-            } else {
-              setTab("stats");
-            }
-          }}
-        >
-          Stats
         </MenuItem>
         <MenuItem
           active={tab == "location"}
