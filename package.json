@@ -6,13 +6,8 @@
   "scripts": {
     "dev": "node --watch backend/index.mjs",
     "test-fe": "mocha backend/*.test.mjs",
-    "build0-fe": "cd frontend && parcel build --public-url ./ index.html",
-    "dev-fe": "cd frontend && API_URL='http://localhost:8000/' yarn parcel index.html",
     "build-fe": "./build-fe.sh"
   },
-  "browserslist": [
-    "since 2024"
-  ],
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
@@ -34,7 +29,6 @@
     "eslint-plugin-react": "^7.31.8",
     "eslint-plugin-react-hooks": "^4.6.0",
     "mocha": "^10.2.0",
-    "parcel-bundler": "^1.12.5",
     "postcss-modules": "^3.2.2",
     "prettier": "^2.0.5",
     "react": "^16.0.0",
