@@ -4,15 +4,15 @@
   "main": "index.js",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "nodemon backend/index.mjs",
+    "dev": "node --watch backend/index.mjs",
     "test-fe": "mocha backend/*.test.mjs",
     "build-fe": "cd frontend && parcel build --public-url ./ index.html",
     "dev-fe": "cd frontend && API_URL='http://localhost:8000/' yarn parcel index.html"
   },
-  "browserslist": ["since 2023"],
+  "browserslist": [
+    "since 2023"
+  ],
   "dependencies": {
-    "react-is": "^18.2.0",
-    "victory": "^36.6.8",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -21,22 +21,23 @@
     "haversine-distance": "^1.2.1",
     "node-mailjet": "3",
     "pg": "^8.2.1",
-    "runtypes": "^6.6.0"
+    "react-is": "^18.2.0",
+    "runtypes": "^6.6.0",
+    "victory": "^36.6.8"
   },
   "devDependencies": {
     "@babel/core": "^7.10.3",
     "@babel/preset-react": "^7.10.1",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react": "^7.31.8",
     "eslint": "^8.24.0",
+    "eslint-plugin-react": "^7.31.8",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "mocha": "^10.2.0",
-    "nodemon": "^2.0.4",
     "parcel-bundler": "^1.12.4",
     "postcss-modules": "^3.2.2",
     "prettier": "^2.0.5",
+    "react": "^16.0.0",
     "react-dom": "^16.0.0",
     "react-redux": "^7.2.0",
-    "react": "^16.0.0",
     "redux": "^4.0.5",
     "reselect": "^4.0.0",
     "styled-components": "^5.3.5",
