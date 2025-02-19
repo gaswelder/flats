@@ -65,7 +65,8 @@ const XYPlot = ({ xys, noxaxis, title }) => {
 
 const formatDateTick = (x) => {
   const date = new Date(x);
-  const m = date.getMonth() + 1;
-  const d = date.getDate();
-  return d.toString().padStart(2, 0) + "." + m.toString().padStart(2, 0);
+  return Intl.DateTimeFormat(undefined, {
+    month: "2-digit",
+    year: "2-digit",
+  }).format(date);
 };
