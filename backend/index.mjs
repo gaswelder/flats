@@ -1,12 +1,13 @@
 import dotenv from "dotenv";
+import mailjet from "node-mailjet";
 import pg from "pg";
 import service from "./core/index.mjs";
-import mailjet from "node-mailjet";
-import { log } from "./lib/slog.mjs";
-import { createApp } from "./http.mjs";
 import { getdb, migrate } from "./core/storage.mjs";
-import { pgx } from "./lib/pgx.mjs";
+import { createApp } from "./http.mjs";
 import { batcher } from "./lib/batcher.mjs";
+import { pgx } from "./lib/pgx.mjs";
+import { log } from "./lib/slog.mjs";
+import { getStamp } from "./stamp.mjs";
 import { timer } from "./timer.mjs";
 
 dotenv.config();
@@ -84,19 +85,6 @@ const serve = async (pool, srv, storage, mailer, adminEmail) => {
     log.info("web server started on port " + PORT);
   });
 
-  scheduleFirstOfMonth(storage, "lastDumpMonth", async () => {
-    const stats = await srv.dump();
-    if (adminEmail) {
-      mailer.send(
-        adminEmail,
-        "Monthly dump is ready",
-        Object.entries(stats)
-          .map((e) => `${e[0]} = ${e[1]}\n`)
-          .join("")
-      );
-    }
-  });
-
   scheduleDaily(storage, "lastSnapshotDate", async () => {
     try {
       const tick = timer(log);
@@ -110,33 +98,6 @@ const serve = async (pool, srv, storage, mailer, adminEmail) => {
       log.error("snapshot failed: " + err.message, { err });
     }
   });
-};
-
-const getStamp = (type) => {
-  const ts = new Date();
-  const y = ts.getFullYear();
-  const m = (ts.getMonth() + 1).toString().padStart(2, "0");
-  const d = ts.getDate().toString().padStart(2, "0");
-  switch (type) {
-    case "monthly":
-      return `${y}-${m}`;
-    case "daily":
-      return `${y}-${m}-${d}`;
-    default:
-      throw new Error("unknown stamp type: " + type);
-  }
-};
-
-const scheduleFirstOfMonth = (storage, key, f) => {
-  setInterval(async () => {
-    const now = getStamp("monthly");
-    const last = await storage.getValue(key);
-    if (now == last) {
-      return;
-    }
-    await f();
-    await storage.setValue(key, now);
-  }, 1000 * 3600 * 12);
 };
 
 const scheduleDaily = (storage, key, f) => {
@@ -184,10 +145,6 @@ const cli = async (pool, srv, cmd) => {
           console.log(s.ts, n);
         }
       }
-      break;
-    case "dump":
-      await srv.dump();
-      pool.end();
       break;
     default:
       process.stderr.write(`Unknown command: ${cmd}\n`);

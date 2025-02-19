@@ -5,7 +5,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "node --watch backend/index.mjs",
-    "test-fe": "mocha backend/*.test.mjs",
+    "test": "mocha backend/*.test.mjs",
     "build-fe": "./build-fe.sh"
   },
   "dependencies": {

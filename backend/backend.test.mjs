@@ -1,7 +1,7 @@
-import service from "./core/index.mjs";
-import pg from "pg";
 import * as assert from "assert";
+import pg from "pg";
 import * as timers from "timers/promises";
+import service from "./core/index.mjs";
 import { getdb, migrate } from "./core/storage.mjs";
 import { pgx } from "./lib/pgx.mjs";
 
@@ -263,22 +263,6 @@ describe("backend", () => {
       ],
       "2023-08-18T23:50:38.164Z"
     );
-
-    // Sleep because snapshots are made in background.
-    await timers.setTimeout(100);
-    const counts = await t.service.getCounts(defFilter);
-    assert.deepEqual(counts, [
-      { count: "2", ts: new Date("2023-08-16T20:50:38.164Z") },
-      { count: "1", ts: new Date("2023-08-17T20:50:38.186Z") },
-      { count: "2", ts: new Date("2023-08-18T23:50:38.164Z") },
-    ]);
-
-    const averages = await t.service.getAverages(defFilter);
-    assert.deepEqual(averages, [
-      { price: 300, ts: new Date("2023-08-16T20:50:38.164Z") },
-      { price: 300, ts: new Date("2023-08-17T20:50:38.186Z") },
-      { price: 300, ts: new Date("2023-08-18T23:50:38.164Z") },
-    ]);
 
     const offers = await t.service.getOffers(defFilter, 10);
     assert.deepEqual(

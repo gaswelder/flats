@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import fs from "fs";
 import t from "runtypes";
+import { getStamp } from "../stamp.mjs";
 import { timer } from "../timer.mjs";
 import { notifySubscribers } from "./notifier.mjs";
 import { Offer } from "./offer.mjs";
@@ -10,10 +11,8 @@ export default (db, storage, mailer, log, datadir) => {
     /**
      * Updates a named snapshot.
      *
-     * Each worker is responsible for one or more of the snapshots.
-     * The worker collects a complete snapshot for its area and posts it here.
-     * Here it's added to the current global offers table, with diffs and
-     * stats calculated.
+     * A worker collects a complete snapshot for its area and posts it here.
+     * Here the snapshot is merged into the current offers table using diffs.
      *
      * @param {string} name
      * @param {Offer[]} items
@@ -38,16 +37,12 @@ export default (db, storage, mailer, log, datadir) => {
           newOffers.push(x);
         }
       }
-      tick("parse_offers");
+      tick("parse_offers", newOffers.length);
 
       await storage.addSnapshotLog(name, newOffers.length);
 
-      const { same, updated, removed, added } = await storage.mergeSnapshot(
-        tick,
-        newOffers,
-        name,
-        time
-      );
+      const counts = await storage.mergeSnapshot(tick, newOffers, name, time);
+      const { same, updated, removed, added } = counts;
       log.info(
         `got ${newOffers.length}: =${same.length} ~${updated.length} +${added.length} -${removed.length}`,
         { name }
@@ -63,6 +58,16 @@ export default (db, storage, mailer, log, datadir) => {
         .catch((err) => {
           log.error(`notification failed: ${err.message}`, { err });
         });
+
+      // Store the data for archival.
+      {
+        const path = getStamp("monthly") + ".jsonl";
+        const data =
+          newOffers
+            .map((x) => JSON.stringify({ ts: time, provider: name, ...x }))
+            .join("\n") + "\n";
+        fs.appendFileSync(datadir + "/" + path, data);
+      }
     },
 
     /**
@@ -145,53 +150,6 @@ export default (db, storage, mailer, log, datadir) => {
 
     async getUpdates() {
       return storage.getSnapshotLogs();
-    },
-
-    async dump() {
-      return db.transaction(async (tr) => {
-        let r = await tr.query(
-          `select distinct ts from snapshots where ts < now() - interval '1 year' order by ts`
-        );
-        const times = r.rows.map((x) => x.ts);
-        log.info(`dump: got ${times.length} timestamps`);
-
-        let n = 0;
-        const stats = { snapshots: times.length, rows: 0 };
-
-        let _fd;
-        let _fdname;
-        const getFile = (ts) => {
-          const y = ts.getFullYear();
-          const m = (ts.getMonth() + 1).toString().padStart(2, "0");
-          const name = `${datadir}/dump-snapshots-${y}-${m}.jsonl`;
-          if (!_fd) {
-            _fd = fs.openSync(name, "a+");
-            _fdname = name;
-            return _fd;
-          }
-          if (name != _fdname) {
-            fs.closeSync(_fd);
-            _fd = fs.openSync(name, "a+");
-            _fdname = name;
-          }
-          return _fd;
-        };
-
-        for (const ts of times) {
-          const fd = getFile(ts);
-          const offers = await tr.q`select * from snapshots where ts=${ts}`;
-          for (const row of offers.rows) {
-            fs.writeSync(fd, JSON.stringify(row) + "\n");
-          }
-          const r = await tr.query(`delete from snapshots where ts = $1`, [ts]);
-          stats.rows += r.rowCount;
-          log.info(
-            `dump: ${++n} of ${times.length}, ${_fdname}, ${r.rowCount} rows`
-          );
-        }
-        if (_fd) fs.closeSync(_fd);
-        return stats;
-      });
     },
 
     async addUser(name, password) {
