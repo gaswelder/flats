@@ -277,8 +277,8 @@ describe("backend", () => {
       email: "foo@example.com",
       lat: 20,
       lon: 30,
-      max_price: 400,
-      max_radius: 1000,
+      maxPrice: 400,
+      maxRadius: 1000,
     });
 
     await t.service.addSnapshot(

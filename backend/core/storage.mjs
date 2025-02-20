@@ -190,8 +190,18 @@ export const getdb = (pool) => {
       return setValue(db, name, value);
     },
 
-    getSubscribers() {
-      return pool.query(`select * from subscribers`).then((r) => r.rows);
+    async getSubscribers() {
+      const res = await pool.query(`select * from subscribers`);
+      return res.rows.map((row) => {
+        return {
+          id: row.id,
+          email: row.email,
+          lat: row.lat,
+          lon: row.lon,
+          maxPrice: row.max_price,
+          maxRadius: row.max_radius,
+        };
+      });
     },
 
     async getSubscriberByEmail(email) {
@@ -205,8 +215,8 @@ export const getdb = (pool) => {
           email: s.email,
           lat: s.lat,
           lon: s.lon,
-          max_price: s.max_price,
-          max_radius: s.max_radius,
+          max_price: s.maxPrice,
+          max_radius: s.maxRadius,
         },
       ]);
     },

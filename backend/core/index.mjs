@@ -127,8 +127,8 @@ export default (db, storage, mailer, log, datadir) => {
           email: t.String,
           lat: t.Number,
           lon: t.Number,
-          max_price: t.Number,
-          max_radius: t.Number,
+          maxPrice: t.Number,
+          maxRadius: t.Number,
         })
         .check(s);
       return storage.addSubscriber(obj);
