@@ -15,7 +15,6 @@ import { LoginForm } from "./LoginForm";
 import { OfferMapTooltip } from "./OfferMapTooltip";
 import { OffersBox } from "./OffersBox";
 import { OffersFilter } from "./OffersFilter";
-import { OffersTable } from "./OffersTable";
 import { Stats } from "./Stats";
 import { Window } from "./Window";
 import { Shy } from "./lib/Shy";
@@ -278,7 +277,6 @@ const MainOk = () => {
       <LowerBar
         {...{
           tab,
-          offers,
           center,
           setCenter,
           setTab,
@@ -380,7 +378,6 @@ const FilterControl = ({ filter, onChange }) => {
 
 const LowerBar = ({
   tab,
-  offers,
   center,
   setCenter,
   setTab,
@@ -390,11 +387,6 @@ const LowerBar = ({
 }) => {
   return (
     <>
-      {tab == "list" && (
-        <Window>
-          <OffersTable offers={offers} />
-        </Window>
-      )}
       {tab == "location" && (
         <Window>
           <FavoriteLocations
@@ -410,18 +402,6 @@ const LowerBar = ({
         <Console />
       </Div> */}
       <MenuDiv>
-        <MenuItem
-          active={tab == "list"}
-          onClick={() => {
-            if (tab == "list") {
-              setTab("");
-            } else {
-              setTab("list");
-            }
-          }}
-        >
-          List
-        </MenuItem>
         <MenuItem
           active={tab == "location"}
           onClick={() => {
