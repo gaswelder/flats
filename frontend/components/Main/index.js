@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { API } from "../../api";
 import { getSetting, setSetting } from "../../state";
-import { LoginForm } from "./LoginForm";
+import { Button, Form, Input } from "../lib/Elements";
 import { MainOk } from "./MainOK";
 
 export const Main = () => {
@@ -32,7 +32,18 @@ export const Main = () => {
   return (
     <>
       {state.type == "failed" && <p>Login failed</p>}
-      <LoginForm onSubmit={onSubmit} />;
+
+      <Form onSubmit={onSubmit}>
+        <p>Enter your credentials to enter the flats radar:</p>
+        <label>
+          User
+          <Input name="user"></Input>
+        </label>
+        <label>
+          Password<Input name="password" type="password"></Input>
+        </label>
+        <Button>Login</Button>
+      </Form>
     </>
   );
 };
