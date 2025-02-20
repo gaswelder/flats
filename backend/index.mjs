@@ -1,13 +1,13 @@
 import dotenv from "dotenv";
 import mailjet from "node-mailjet";
 import pg from "pg";
-import service from "./core/index.mjs";
-import { getdb, migrate } from "./core/storage.mjs";
+import service from "./core.mjs";
 import { createApp } from "./http.mjs";
 import { batcher } from "./lib/batcher.mjs";
 import { pgx } from "./lib/pgx.mjs";
 import { log } from "./lib/slog.mjs";
 import { getStamp } from "./stamp.mjs";
+import { getdb, migrate } from "./storage.mjs";
 import { timer } from "./timer.mjs";
 
 dotenv.config();

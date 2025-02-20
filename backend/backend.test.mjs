@@ -1,9 +1,9 @@
 import * as assert from "assert";
 import pg from "pg";
 import * as timers from "timers/promises";
-import service from "./core/index.mjs";
-import { getdb, migrate } from "./core/storage.mjs";
+import service from "./core.mjs";
 import { pgx } from "./lib/pgx.mjs";
+import { getdb, migrate } from "./storage.mjs";
 
 const withFakeDate = async (d, f) => {
   const original = Date;

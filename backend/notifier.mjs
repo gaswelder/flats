@@ -1,5 +1,5 @@
 import haversine from "haversine-distance";
-import { log } from "../lib/slog.mjs";
+import { log } from "./lib/slog.mjs";
 
 export const notifySubscribers = async (
   subscribers,

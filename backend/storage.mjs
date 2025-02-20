@@ -1,5 +1,5 @@
-import { diff } from "../lib/diff.mjs";
-import { pgx } from "../lib/pgx.mjs";
+import { diff } from "./lib/diff.mjs";
+import { pgx } from "./lib/pgx.mjs";
 import { Offer } from "./offer.mjs";
 
 const init = [
