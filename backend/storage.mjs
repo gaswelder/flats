@@ -221,6 +221,10 @@ export const getdb = (pool) => {
       ]);
     },
 
+    async deleteSubscriber(id) {
+      await db.q`delete from subscribers where id=${id}`;
+    },
+
     async saveSnapshot() {
       const time = new Date();
       await db.q`insert into price_snapshots (ts, id, price, original_price)

@@ -134,6 +134,10 @@ export default (db, storage, mailer, log, datadir) => {
       return storage.addSubscriber(obj);
     },
 
+    deleteSubscriber(id) {
+      return storage.deleteSubscriber(id);
+    },
+
     getSubscribers() {
       return storage.getSubscribers();
     },

@@ -5,10 +5,17 @@ export default (xs) => {
     return "";
   }
   const keys = Object.keys(xs[0]);
-  const row = (x) =>
-    `<tr>${keys.map((k) => `<td>${tpl.esc(x[k])}</td>`).join("")}</tr>`;
+
   return `<table border="1">
-        <tr>${keys.map((k) => `<th>${tpl.esc(k)}</th>`).join("")}</tr>
-        ${xs.map(row).join("")}
-      </table>`;
+      ${trh(keys)}
+      ${xs.map((x) => tr(keys, x)).join("")}
+    </table>`;
+};
+
+const trh = (keys) => {
+  return `<tr>${keys.map((k) => `<th>${tpl.esc(k)}</th>`).join("")}</tr>`;
+};
+
+const tr = (keys, x) => {
+  return `<tr>${keys.map((k) => `<td>${tpl.esc(x[k])}</td>`).join("")}</tr>`;
 };

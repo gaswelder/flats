@@ -61,6 +61,34 @@ export const createApp = (core) => {
     .get("/admin/subscriptions", adminAuth, async (req, res) => {
       res.send(await adminViews.subscriptions(core));
     })
+    .post(
+      "/admin/subscriptions",
+      adminAuth,
+      express.urlencoded({ extended: false }),
+      async (req, res) => {
+        const b = req.body;
+        try {
+          if (b.del) {
+            await core.deleteSubscriber(b.del);
+            res.redirect("subscriptions");
+            return;
+          }
+          await core.addSubscriber({
+            email: b.email,
+            lat: parseFloat(b.lat),
+            lon: parseFloat(b.lon),
+            maxPrice: parseInt(b.max_price),
+            maxRadius: parseInt(b.max_radius),
+          });
+          res.redirect("subscriptions");
+          return;
+        } catch (err) {
+          log.error(err.message, { err });
+          res.sendStatus(500);
+          return;
+        }
+      }
+    )
     .get("/admin/login", async (req, res) => {
       res.send(await adminViews.login());
     })
@@ -77,19 +105,6 @@ export const createApp = (core) => {
         } else {
           res.send(await adminViews.login("wrong login / password"));
         }
-      }
-    )
-    .post(
-      "/admin",
-      adminAuth,
-      express.urlencoded({ extended: false }),
-      async (req, res) => {
-        const b = req.body;
-        await core.addSubscriber(b);
-        res.send(`Added subscriber
-      <pre>${JSON.stringify(b, null, 2)}</pre>
-      <a href="admin">Back to admin</a>
-      `);
       }
     )
     .get(
