@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Form, Input } from "./Elements";
+import { Button, Form, Input } from "../lib/Elements";
 
 export const LoginForm = ({ onSubmit }) => {
   return (

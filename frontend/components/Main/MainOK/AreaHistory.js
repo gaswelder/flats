@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { VictoryAxis, VictoryChart, VictoryLine } from "victory";
-import { API } from "../api";
+import { API } from "../../../api";
 
 export const AreaHistory = ({ area, filter }) => {
   const [history, setHistory] = useState(null);

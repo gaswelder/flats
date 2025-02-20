@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { getSetting, setSetting } from "../state";
+import { getSetting, setSetting } from "../../../state";
 
 const Div = styled.div`
   padding: 0.5em;
