@@ -22,21 +22,10 @@ export const API = {
     );
   },
 
-  async fetchHistory(rooms, latBounds, lonBounds, maxPrice) {
-    const counts = await fetchJSON(
-      `api/counts?max-price=${maxPrice}&rooms=${rooms}&lat=${latBounds}&lon=${lonBounds}`
+  async fetchHistory(rooms, latBounds, lonBounds) {
+    const history = await fetchJSON(
+      `api/history?max-price=10000000&rooms=${rooms}&lat=${latBounds}&lon=${lonBounds}`
     );
-    const prices = await fetchJSON(
-      `api/averages?max-price=${10000000}&rooms=${rooms}&lat=${latBounds}&lon=${lonBounds}`
-    );
-    const pricesM = new Map(prices.map((x) => [x.ts, x.price]));
-    return counts.map((x) => {
-      const p = pricesM.get(x.ts);
-      return {
-        ts: x.ts,
-        count: x.count,
-        price: p,
-      };
-    });
+    return history;
   },
 };

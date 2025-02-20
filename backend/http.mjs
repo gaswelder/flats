@@ -1,9 +1,9 @@
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
-import { log } from "./lib/slog.mjs";
-import admin from "./admin/main.mjs";
 import adminLogin from "./admin/login.mjs";
-import cookieParser from "cookie-parser";
+import admin from "./admin/main.mjs";
+import { log } from "./lib/slog.mjs";
 
 const parseFilter = (req) => {
   const byVal = (a, b) => a - b;
@@ -100,17 +100,10 @@ export const createApp = (core) => {
       })
     )
     .get(
-      `/api/counts`,
+      `/api/history`,
       serveJson(async (req) => {
         const filter = parseFilter(req);
-        return core.getCounts(filter);
-      })
-    )
-    .get(
-      `/api/averages`,
-      serveJson(async (req) => {
-        const filter = parseFilter(req);
-        return core.getAverages(filter);
+        return core.getHistory(filter);
       })
     )
     .put(

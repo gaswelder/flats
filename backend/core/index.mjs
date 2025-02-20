@@ -108,24 +108,14 @@ export default (db, storage, mailer, log, datadir) => {
     },
 
     /**
-     * Returns a series of counts for a month range for offers that match the
-     * filter.
+     * Returns a series of historical counts and prices for given area.
      *
      * @param {Filter} filter
      * @returns {{ts: Date, count: number}[]}
      */
-    async getCounts(filter) {
+    async getHistory(filter) {
       const h = await storage.getHistory(filter);
-      return h.map((x) => {
-        return { ts: x.ts, count: x.count };
-      });
-    },
-
-    async getAverages(filter) {
-      const h = await storage.getHistory(filter);
-      return h.map((x) => {
-        return { ts: x.ts, price: x.price };
-      });
+      return h;
     },
 
     /**
