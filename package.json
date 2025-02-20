@@ -33,9 +33,6 @@
     "prettier": "^2.0.5",
     "react": "^16.0.0",
     "react-dom": "^16.0.0",
-    "react-redux": "^7.2.0",
-    "redux": "^4.0.5",
-    "reselect": "^4.0.0",
     "styled-components": "^5.3.5",
     "supertest": "^6.3.3"
   }

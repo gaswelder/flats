@@ -1,5 +1,4 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import styled from "styled-components";
 
 const Table = styled.table`
@@ -34,10 +33,10 @@ const PriceHistoryOL = styled.ol`
   }
 `;
 
-export const OffersTable = React.memo(function OffersTable(props) {
-  const { offers } = props;
-
-  const selectedOffer = useSelector((state) => state.selectedOffer);
+export const OffersTable = React.memo(function OffersTable({
+  offers,
+  selectedOffer,
+}) {
   const tableRef = React.useRef();
 
   return (
