@@ -1,42 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { VictoryAxis, VictoryChart, VictoryLine } from "victory";
-import { fetchAverages, fetchOfferCounts } from "../state";
+import { API } from "../api";
 
 export const AreaHistory = ({ area, filter }) => {
-  const [prices, setPrices] = useState(null);
-  const [pricesErr, setPricesErr] = useState(null);
-  const [counts, setCounts] = useState();
-  const [countsErr, setCountsErr] = useState(null);
-
+  const [history, setHistory] = useState(null);
+  const [err, setErr] = useState(null);
   useEffect(() => {
     if (!area) return;
     const latBounds = [area.leftTop.latitude, area.rightBottom.latitude];
     const lonBounds = [area.leftTop.longitude, area.rightBottom.longitude];
-    fetchAverages(filter.rooms, latBounds, lonBounds).then((result) => {
-      if (Array.isArray(result)) {
-        setPrices(result);
-      } else {
-        setPricesErr("failed to load data");
-      }
-    });
-    fetchOfferCounts(filter.rooms, latBounds, lonBounds, filter.price[1]).then(
-      (result) => {
-        if (Array.isArray(result)) {
-          setCounts(result);
-        } else {
-          setCountsErr("failed to load data");
-        }
-      }
-    );
+    setErr(null);
+    API.fetchHistory(filter.rooms, latBounds, lonBounds)
+      .then(setHistory)
+      .catch(setErr);
   }, [area, filter]);
 
-  if (countsErr) return countsErr;
-  if (pricesErr) return pricesErr;
-  if (!area || !counts || !prices) {
-    return null;
-  }
-  const dataPrices = prices.map((p) => ({ x: new Date(p.ts), y: p.price }));
-  const dataCounts = counts.map((p) => ({ x: new Date(p.ts), y: p.count }));
+  if (err) return `error while loading history: ${err.message}`;
+  if (!area || !history) return null;
+
+  const dataPrices = history.map((p) => ({ x: new Date(p.ts), y: p.price }));
+  const dataCounts = history.map((p) => ({ x: new Date(p.ts), y: p.count }));
   return (
     <>
       <XYPlot xys={dataPrices} noxaxis title="Prices" />

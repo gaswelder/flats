@@ -6,15 +6,9 @@ import React, {
   useState,
 } from "react";
 import styled from "styled-components";
+import { API } from "../api";
 import { Clusters, InfoBox, SlippyMap } from "../rsm/index";
-import {
-  fetchOffers,
-  getSetting,
-  loadFilter,
-  login,
-  saveFilter,
-  setSetting,
-} from "../state";
+import { getSetting, loadFilter, saveFilter, setSetting } from "../state";
 import { AreaHistory } from "./AreaHistory";
 import { FavoriteLocations } from "./FavoriteLocations";
 import { LoginForm } from "./LoginForm";
@@ -83,12 +77,12 @@ export const Main = () => {
     e.preventDefault();
     const u = e.target.querySelector('[name="user"').value;
     const p = e.target.querySelector('[name="password"').value;
-    console.log({ u, p });
     setState({ type: "waitingAuth" });
-    const ok = await login(u, p);
+    const { ok, token } = await API.login(u, p);
     if (!ok) {
       setState({ type: "failed" });
     } else {
+      setSetting("token", token);
       setState({ type: "ok" });
     }
   };
@@ -111,7 +105,7 @@ const MainOk = () => {
     (area) => {
       setArea(area);
       setSetting("defaultCenter", area.center);
-      fetchOffers(
+      API.fetchOffers(
         filter.rooms,
         [area.leftTop.latitude, area.rightBottom.latitude],
         [area.leftTop.longitude, area.rightBottom.longitude],
