@@ -9,13 +9,16 @@ import { API } from "../../../api";
 import { Clusters, InfoBox, SlippyMap } from "../../../rsm/index";
 import { getSetting, loadFilter, setSetting } from "../../../state";
 import { Shy } from "../../lib/Shy";
+import { Window } from "../../lib/Window";
 import { useDebouncedCallback } from "../../util";
 import { AreaHistory } from "./AreaHistory";
+import { FavoriteLocations } from "./FavoriteLocations";
 import { FilterControl } from "./FilterControl";
-import { LowerBar } from "./LowerBar";
+import { Location } from "./Location";
 import { OfferMapTooltip } from "./OfferMapTooltip";
 import { OffersBox } from "./OffersBox";
 import { Stats } from "./Stats";
+import { Zoomer } from "./Zoomer";
 
 const rootDivStyle = {
   position: "absolute",
@@ -35,10 +38,10 @@ const clamp = (min, max, val) => {
 
 export const MainOk = () => {
   const [filter, setFilter] = useState(loadFilter());
-  const [tab, setTab] = useState("");
   const [offers, setOffers] = useState([]);
   const [selectedOffers, setSelectedOffers] = useState(null);
   const [area, setArea] = useState(null);
+  const [locationOpen, setLocationOpen] = useState(false);
 
   const $loadOffers = useDebouncedCallback(
     (area) => {
@@ -214,17 +217,32 @@ export const MainOk = () => {
           return <Stats offers={offers} />;
         }}
       />
-      <LowerBar
-        {...{
-          tab,
-          center,
-          setCenter,
-          setTab,
-          zoom,
-          setZoom,
-          controllerState,
-        }}
-      />
+      <div
+        style={{ position: "absolute", left: 10, top: 40 }}
+        onClick={() => setLocationOpen(!locationOpen)}
+      >
+        <Location center={center} setCenter={setCenter} />
+      </div>
+      {locationOpen && (
+        <Window onClose={() => setLocationOpen(false)}>
+          <FavoriteLocations
+            center={center}
+            onSelect={(coords) => {
+              setCenter(coords);
+              setLocationOpen(false);
+            }}
+          />
+        </Window>
+      )}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}>
+        <Zoomer
+          value={zoom}
+          onChange={(newzoom) => {
+            setZoom(newzoom);
+            clearTimeout(controllerState.zoomTimer);
+          }}
+        />
+      </div>
     </div>
   );
 };

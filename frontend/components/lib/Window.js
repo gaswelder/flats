@@ -11,6 +11,18 @@ const Div = styled.div`
   overflow-y: auto;
 `;
 
-export const Window = ({ children }) => {
-  return <Div>{children}</Div>;
+export const Window = ({ children, onClose }) => {
+  return (
+    <Div>
+      {onClose && (
+        <button
+          style={{ position: "absolute", right: 10, top: 10 }}
+          onClick={onClose}
+        >
+          &times;
+        </button>
+      )}
+      {children}
+    </Div>
+  );
 };
