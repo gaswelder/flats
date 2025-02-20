@@ -147,6 +147,17 @@ export default (db, storage, mailer, log, datadir) => {
       await db.batchInsert("users", [{ name, phash }]);
     },
 
+    async checkAdminToken(token) {
+      return token == "123123123";
+    },
+
+    async adminLogin(name, password) {
+      if (name == "foo" && password == "bar") {
+        return "123123123";
+      }
+      return null;
+    },
+
     async login(name, password) {
       const r = await db.q`select * from users where name=${name}`;
       if (r.rows.length != 1) {

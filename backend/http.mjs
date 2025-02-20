@@ -1,8 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
-import adminLogin from "./admin/login.mjs";
-import admin from "./admin/main.mjs";
+import { adminViews } from "./admin/index.mjs";
 import { log } from "./lib/slog.mjs";
 
 const parseFilter = (req) => {
@@ -24,19 +23,23 @@ const parseFilter = (req) => {
   };
 };
 
-const SECRET = "123123123";
-const adminAuth = (req, res, next) => {
-  cookieParser()(req, res, () => {
-    const token = req.cookies.token;
-    if (token != SECRET) {
-      res.redirect("admin/login");
-      return;
-    }
-    next();
-  });
-};
-
 export const createApp = (core) => {
+  const adminAuth = (req, res, next) => {
+    cookieParser()(req, res, async () => {
+      const token = req.cookies.token;
+      try {
+        if (await core.checkAdminToken(token)) {
+          next();
+        } else {
+          res.redirect("admin/login");
+        }
+      } catch (err) {
+        log.error(`error in adminAuth: ${err.message}`, { err });
+        res.sendStatus(500);
+      }
+    });
+  };
+
   return express()
     .use((req, res, next) => {
       const t = Date.now();
@@ -52,11 +55,14 @@ export const createApp = (core) => {
     })
     .use(cors())
     .use(express.static("frontend/dist"))
-    .get("/admin", adminAuth, async (req, res) => {
-      res.send(await admin(core));
+    .get("/admin/updates", adminAuth, async (req, res) => {
+      res.send(await adminViews.updates(core));
+    })
+    .get("/admin/subscriptions", adminAuth, async (req, res) => {
+      res.send(await adminViews.subscriptions(core));
     })
     .get("/admin/login", async (req, res) => {
-      res.send(await adminLogin());
+      res.send(await adminViews.login());
     })
     .post(
       "/admin/login",
@@ -64,11 +70,12 @@ export const createApp = (core) => {
       async (req, res) => {
         const login = req.body.login;
         const password = req.body.password;
-        if (login == "foo" && password == "bar") {
-          res.cookie("token", SECRET, { maxAge: 1000 * 3600 * 24 });
-          res.redirect("../admin");
+        const token = await core.adminLogin(login, password);
+        if (token) {
+          res.cookie("token", token, { maxAge: 1000 * 3600 * 24 });
+          res.redirect("../admin/updates");
         } else {
-          res.send(await adminLogin("wrong login / password"));
+          res.send(await adminViews.login("wrong login / password"));
         }
       }
     )
