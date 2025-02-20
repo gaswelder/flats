@@ -31,7 +31,7 @@ export const createApp = (core) => {
         if (await core.checkAdminToken(token)) {
           next();
         } else {
-          res.redirect("admin/login");
+          res.redirect("login");
         }
       } catch (err) {
         log.error(`error in adminAuth: ${err.message}`, { err });
@@ -61,6 +61,9 @@ export const createApp = (core) => {
     .get("/admin/subscriptions", adminAuth, async (req, res) => {
       res.send(await adminViews.subscriptions(core));
     })
+    .get("/admin/users", adminAuth, async (req, res) => {
+      res.send(await adminViews.users(core));
+    })
     .post(
       "/admin/subscriptions",
       adminAuth,
@@ -69,7 +72,7 @@ export const createApp = (core) => {
         const b = req.body;
         try {
           if (b.del) {
-            await core.deleteSubscriber(b.del);
+            await core.storage().deleteSubscriber(b.del);
             res.redirect("subscriptions");
             return;
           }

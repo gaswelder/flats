@@ -119,6 +119,12 @@ const patches = [
       await conn.q`drop table suggested_offers`;
     },
   },
+  {
+    v: 22,
+    async f(conn) {
+      await conn.q`alter table users add is_admin bool not null default false`;
+    },
+  },
 ];
 
 export const migrate = async (pool0, logger) => {
@@ -207,6 +213,11 @@ export const getdb = (pool) => {
     async getSubscriberByEmail(email) {
       const r = await db.q`select * from subscribers where email=${email}`;
       return r.rows[0];
+    },
+
+    async getUsers() {
+      const r = await db.q`select * from users`;
+      return r.rows;
     },
 
     async addSubscriber(s) {

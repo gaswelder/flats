@@ -3,7 +3,7 @@ import table from "./table.mjs";
 import { wrapper } from "./wrapper.mjs";
 
 export default async (core) => {
-  const subscribers = await core.getSubscribers();
+  const subscribers = await core.storage().getSubscribers();
   return wrapper(`
     ${nav()}
     <h2>Subscribers</h2>

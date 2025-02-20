@@ -134,46 +134,46 @@ export default (db, storage, mailer, log, datadir) => {
       return storage.addSubscriber(obj);
     },
 
-    deleteSubscriber(id) {
-      return storage.deleteSubscriber(id);
-    },
-
-    getSubscribers() {
-      return storage.getSubscribers();
+    storage() {
+      return storage;
     },
 
     async getUpdates() {
       return storage.getSnapshotLogs();
     },
 
-    async addUser(name, password) {
+    async addUser(name, password, isAdmin) {
       const phash = await bcrypt.hash(password, 10);
-      await db.batchInsert("users", [{ name, phash }]);
+      await db.batchInsert("users", [
+        { name, phash, is_admin: Boolean(isAdmin) },
+      ]);
     },
 
     async checkAdminToken(token) {
-      return token == "123123123";
+      const r = await db.q`select * from users where token=${token}`;
+      if (r.rows.length != 1) return false;
+      return r.rows[0].is_admin;
     },
 
     async adminLogin(name, password) {
-      if (name == "foo" && password == "bar") {
-        return "123123123";
-      }
-      return null;
+      const r = await this.login(name, password);
+      if (!r.ok || !r.isAdmin) return null;
+      return r.token;
     },
 
     async login(name, password) {
-      const r = await db.q`select * from users where name=${name}`;
-      if (r.rows.length != 1) {
+      const res = await db.q`select * from users where name=${name}`;
+      if (res.rows.length != 1) {
         return { ok: false };
       }
-      const ok = await bcrypt.compare(password, r.rows[0].phash);
+      const r = res.rows[0];
+      const ok = await bcrypt.compare(password, r.phash);
       if (!ok) {
         return { ok };
       }
       const token = await bcrypt.genSalt(1);
       await db.q`update users set token = ${token} where id=${r.id}`;
-      return { ok, token };
+      return { ok, token, isAdmin: r.is_admin };
     },
   };
 };

@@ -71,7 +71,7 @@ const main = async () => {
 
   const cmd = process.argv[2];
   if (cmd) {
-    await cli(pool, srv, cmd);
+    await cli(pool, srv, cmd, process.argv.slice(3));
   } else {
     await serve(pool, srv, storage, mailer, config.ADMIN_EMAIL);
   }
@@ -129,7 +129,7 @@ const pruneSnapshots = async (storage) => {
   await del.end();
 };
 
-const cli = async (pool, srv, cmd) => {
+const cli = async (pool, srv, cmd, args) => {
   const storage = getdb(pool);
   switch (cmd) {
     case "setup":
@@ -146,6 +146,11 @@ const cli = async (pool, srv, cmd) => {
         }
       }
       break;
+    case "add-admin": {
+      const [name, password] = args;
+      await srv.addUser(name, password, true);
+      break;
+    }
     default:
       process.stderr.write(`Unknown command: ${cmd}\n`);
       process.exit(1);
