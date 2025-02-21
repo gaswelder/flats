@@ -341,27 +341,20 @@ export const getdb = (pool) => {
     async getHistory(filter) {
       const [x1, y1] = squareCoords(filter.lat[0], filter.lon[0]);
       const [x2, y2] = squareCoords(filter.lat[1], filter.lon[1]);
-
-      const r = await db.q`select * from history_squares
-      where x between ${x1} and ${x2}
-        and y between ${y1} and ${y2}`;
-
-      const gg = Object.groupBy(r.rows, (x) => x.ts);
-      return Object.entries(gg)
-        .map(([ts, v]) => {
-          let count = 0;
-          let sum = 0;
-          v.forEach((row) => {
-            count += row.count;
-            sum += row.sum;
-          });
-          return {
-            ts: v[0].ts,
-            price: sum / count,
-            count,
-          };
-        })
-        .sort((a, b) => a.ts.getTime() - b.ts.getTime());
+      const r =
+        await db.q`select ts, sum(count) as count, sum(sum)/sum(count) as price
+        from history_squares
+        where x between ${x1} and ${x2}
+          and y between ${y1} and ${y2}
+        group by ts
+        order by ts`;
+      return r.rows.map((row) => {
+        return {
+          ts: row.ts,
+          count: parseInt(row.count),
+          price: parseInt(row.price),
+        };
+      });
     },
 
     async getSnapshotLogs() {
