@@ -48,81 +48,42 @@ const init = [
   create unique index on offers (id);
   `,
 
+  // history squares keeps per-date per-square statistics: the sum of prices
+  // and the number of offers. This is used to build historical graphs.
+  `create table history_squares (ts timestamptz, x int, y int, sum int, count int);
+        create index on history_squares(ts, x, y);`,
+
   // the price_snapshots table stores all prices for all offers for every
   // date. This table is needed for historical statistical queries.
   //
   // currently it's not every date but every timestamp when there is any change
   // in the offers or prices.
-  `create table snapshots (
+  `create table price_snapshots (
     ts timestamptz,
     id varchar(100),
     price float,
     original_price varchar(1000)
   );
-  create index snapshots_price_rooms_lat_lon_ts_idx on snapshots (price, ts);`,
+  create index on price_snapshots (price, ts);`,
 
-  // ---------------
-
-  // users
+  // Users table keeps track of user and admin accounts and their
+  // login tokens.
   `create table users (
     id serial,
     name varchar(20) unique,
+    is_admin bool not null default false,
     phash varchar(100),
     token varchar(60));`,
 
   // The logs table records upload events.
-  `create table logs (t timestamptz, message text);`,
-
-  `create table suggested_offers (
-    subscriber_id int not null,
-    offer_id varchar(100) not null,
-    unique (subscriber_id, offer_id)
-    );`,
+  `create table logs (t timestamptz, message text, name text, count int);`,
 ].join("\n");
 
 const patches = [
   {
-    v: 16,
-    f: async (conn) => {
-      await conn.q`insert into users (name, phash) values ('foo', '$2b$10$q2PL7T3n7w4POyw9rL4nfOlNqHWqpKJJ0yRe.gtWUDjz4ZGWZFevu')`;
-    },
-  },
-  {
-    v: 17,
-    f: async (conn) => {
-      await conn.q`alter table suggested_offers add column archived bool default false`;
-    },
-  },
-  {
-    v: 18,
-    async f(conn) {
-      await conn.q`alter table logs add name text, add count int`;
-    },
-  },
-  {
-    v: 19,
-    async f(conn) {
-      await conn.q`alter table snapshots rename to price_snapshots`;
-    },
-  },
-  {
-    v: 20,
-    async f(conn) {
-      await conn.q`create table history_squares (ts timestamptz, x int, y int, sum int, count int);
-        create index on history_squares(ts, x, y);
-      `;
-    },
-  },
-  {
-    v: 21,
-    async f(conn) {
-      await conn.q`drop table suggested_offers`;
-    },
-  },
-  {
     v: 22,
     async f(conn) {
-      await conn.q`alter table users add is_admin bool not null default false`;
+      await conn.q`...`;
     },
   },
 ];
