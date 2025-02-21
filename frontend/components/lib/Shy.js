@@ -16,7 +16,7 @@ export const Shy = ({ title, contentWidth, contentHeight, content, top }) => {
         style={{
           width: contentWidth,
           height: contentHeight,
-          background: "rgba(255, 255, 255, 0.8)",
+          background: "rgba(255, 255, 255, 0.9)",
         }}
       >
         {open && content()}

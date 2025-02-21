@@ -33,13 +33,27 @@ export const AreaHistory = ({ area, filter }) => {
 const XYPlot = ({ xys, noxaxis, title }) => {
   return (
     <div style={{ position: "relative" }}>
-      <p style={{ position: "absolute", left: 80, top: 80 }}>{title}</p>
+      <p
+        style={{ position: "absolute", left: 50, top: 30, fontSize: "smaller" }}
+      >
+        {title}
+      </p>
       <VictoryChart height={200}>
         <VictoryAxis
           crossAxis
           tickFormat={noxaxis ? () => null : formatDateTick}
+          style={{
+            tickLabels: { fontSize: 11 },
+            grid: { stroke: "#aaa", strokeDasharray: "5, 5" },
+          }}
         />
-        <VictoryAxis dependentAxis />
+        <VictoryAxis
+          dependentAxis
+          style={{
+            tickLabels: { fontSize: 11 },
+            grid: { stroke: "#aaa", strokeDasharray: "5, 5" },
+          }}
+        />
         <VictoryLine data={xys} />
       </VictoryChart>
     </div>

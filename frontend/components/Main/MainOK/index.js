@@ -211,14 +211,14 @@ export const MainOk = () => {
       <Shy
         top={300}
         title="Prices"
-        contentWidth={500}
+        contentWidth={400}
         contentHeight={200}
         content={() => {
           return <Stats offers={offers} />;
         }}
       />
       <div
-        style={{ position: "absolute", left: 10, top: 40 }}
+        style={{ position: "absolute", left: 10, bottom: 60 }}
         onClick={() => setLocationOpen(!locationOpen)}
       >
         <Location center={center} setCenter={setCenter} />
