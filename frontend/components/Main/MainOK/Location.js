@@ -1,15 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
+import { getSetting } from "../../../state";
 
 export const Location = ({ center }) => {
   return (
     <div style={{ background: "white", padding: 6, borderRadius: 6 }}>
       <b>Location</b>
       <Deb val={center}>
-        {(val) => (
-          <div>
-            {val.latitude.toFixed(8)} {val.longitude.toFixed(8)}
-          </div>
-        )}
+        {(val) => {
+          const locs = getSetting("favoriteLocations", []);
+          const loc = locs.find(
+            (x) =>
+              Math.abs(val.latitude - x.center.latitude) < 1 &&
+              Math.abs(val.longitude - x.center.longitude) < 1
+          );
+          return (
+            <div>
+              {loc
+                ? loc.name
+                : `${val.latitude.toFixed(8)} ${val.longitude.toFixed(8)}`}
+            </div>
+          );
+        }}
       </Deb>
     </div>
   );
