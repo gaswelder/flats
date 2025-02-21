@@ -224,13 +224,14 @@ export const MainOk = () => {
         <Location center={center} setCenter={setCenter} />
       </div>
       {locationOpen && (
-        <Window onClose={() => setLocationOpen(false)}>
+        <Window>
           <FavoriteLocations
             center={center}
             onSelect={(coords) => {
               setCenter(coords);
               setLocationOpen(false);
             }}
+            onCloseClick={() => setLocationOpen(false)}
           />
         </Window>
       )}

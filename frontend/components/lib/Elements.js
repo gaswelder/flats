@@ -16,4 +16,7 @@ export const Input = styled.input`
 
 export const Button = styled.button`
   padding: 4px;
+  & + & {
+    margin-left: 4px;
+  }
 `;
