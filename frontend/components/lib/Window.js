@@ -1,14 +1,14 @@
 import React from "react";
 import styled from "styled-components";
+import { styles } from "./Elements";
 
 const Div = styled.div`
   position: absolute;
   left: 25px;
   top: 20px;
   bottom: 75px;
-  background: rgba(255, 255, 255, 0.9);
   overflow-y: auto;
-  padding: 20px;
+  ${styles.sheet}
 `;
 
 export const Window = ({ children, onClose }) => {

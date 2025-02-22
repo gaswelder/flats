@@ -1,9 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
+import styled from "styled-components";
 import { getSetting } from "../../../state";
+import { styles } from "../../lib/Elements";
 
-export const Location = ({ center }) => {
+const Root = styled.div`
+  ${styles.sheet}
+  cursor: pointer;
+`;
+
+export const LocationBalloon = ({ center, onClick, style }) => {
   return (
-    <div style={{ background: "white", padding: 6, borderRadius: 6 }}>
+    <Root onClick={onClick} style={style}>
       <b>Location</b>
       <Deb val={center}>
         {(val) => {
@@ -22,7 +29,7 @@ export const Location = ({ center }) => {
           );
         }}
       </Deb>
-    </div>
+    </Root>
   );
 };
 

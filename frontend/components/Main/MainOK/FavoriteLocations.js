@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { getSetting, setSetting } from "../../../state";
-import { Button } from "../../lib/Elements";
+import { Button, styles } from "../../lib/Elements";
 
 const Div = styled.div`
   padding: 0.5em;
@@ -16,13 +16,17 @@ const Div = styled.div`
   }
 `;
 
+const Root = styled.div`
+  ${styles.sheet}
+`;
+
 export const FavoriteLocations = ({ center, onSelect, onCloseClick }) => {
   const [list, setList] = useState(getSetting("favoriteLocations", []));
   useEffect(() => {
     setSetting("favoriteLocations", list);
   }, [list]);
   return (
-    <div style={{ width: 300 }}>
+    <Root>
       {list.map((location) => {
         return (
           <Div
@@ -53,6 +57,6 @@ export const FavoriteLocations = ({ center, onSelect, onCloseClick }) => {
         Save current location
       </Button>
       <Button onClick={onCloseClick}>Close</Button>
-    </div>
+    </Root>
   );
 };

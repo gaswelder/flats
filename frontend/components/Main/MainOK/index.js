@@ -7,14 +7,13 @@ import React, {
 } from "react";
 import { API } from "../../../api";
 import { Clusters, InfoBox, SlippyMap } from "../../../rsm/index";
-import { getSetting, loadFilter, setSetting } from "../../../state";
+import { getSetting, loadFilter, saveFilter, setSetting } from "../../../state";
 import { Shy } from "../../lib/Shy";
-import { Window } from "../../lib/Window";
-import { useDebouncedCallback } from "../../util";
+import { clamp, useDebouncedCallback } from "../../util";
 import { AreaHistory } from "./AreaHistory";
 import { FavoriteLocations } from "./FavoriteLocations";
-import { FilterControl } from "./FilterControl";
-import { Location } from "./Location";
+import { Filter, FilterBalloon } from "./Filter";
+import { LocationBalloon } from "./Location";
 import { OfferMapTooltip } from "./OfferMapTooltip";
 import { OffersBox } from "./OffersBox";
 import { Stats } from "./Stats";
@@ -29,19 +28,13 @@ const stop = (e) => {
   e.stopPropagation();
 };
 
-const clamp = (min, max, val) => {
-  let r = val;
-  if (r > max) r = max;
-  if (r < min) r = min;
-  return r;
-};
-
 export const MainOk = () => {
   const [filter, setFilter] = useState(loadFilter());
   const [offers, setOffers] = useState([]);
   const [selectedOffers, setSelectedOffers] = useState(null);
   const [area, setArea] = useState(null);
   const [locationOpen, setLocationOpen] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   const $loadOffers = useDebouncedCallback(
     (area) => {
@@ -193,9 +186,6 @@ export const MainOk = () => {
           </InfoBox>
         )}
       </SlippyMap>
-      <div style={{ position: "absolute", left: 6, top: 6 }}>
-        <FilterControl filter={filter} onChange={setFilter} />
-      </div>
       <Shy
         title="Area History"
         contentWidth={500}
@@ -218,13 +208,47 @@ export const MainOk = () => {
         }}
       />
       <div
-        style={{ position: "absolute", left: 10, bottom: 60 }}
-        onClick={() => setLocationOpen(!locationOpen)}
+        style={{
+          position: "absolute",
+          left: 10,
+          bottom: 60,
+          display: "flex",
+          gap: 5,
+        }}
       >
-        <Location center={center} setCenter={setCenter} />
+        <FilterBalloon
+          filter={filter}
+          onClick={() => setShowFilter(!showFilter)}
+          style={showFilter ? { backgroundColor: "#ddd" } : {}}
+        />
+        <LocationBalloon
+          center={center}
+          onClick={() => setLocationOpen(!locationOpen)}
+          style={locationOpen ? { backgroundColor: "#ddd" } : {}}
+        />
       </div>
-      {locationOpen && (
-        <Window>
+
+      <div
+        style={{
+          position: "absolute",
+          left: 10,
+          bottom: 125,
+        }}
+      >
+        {showFilter && (
+          <Filter
+            filter={filter}
+            onApply={(newFilter) => {
+              setFilter(newFilter);
+              saveFilter(newFilter);
+              setShowFilter(false);
+            }}
+            onCancel={() => {
+              setShowFilter(false);
+            }}
+          />
+        )}
+        {locationOpen && (
           <FavoriteLocations
             center={center}
             onSelect={(coords) => {
@@ -233,8 +257,9 @@ export const MainOk = () => {
             }}
             onCloseClick={() => setLocationOpen(false)}
           />
-        </Window>
-      )}
+        )}
+      </div>
+
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}>
         <Zoomer
           value={zoom}

@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+export const clamp = (min, max, val) => {
+  let r = val;
+  if (r > max) r = max;
+  if (r < min) r = min;
+  return r;
+};
+
 export const useResource = (load, deps) => {
   const [data, setData] = useState();
   const [error, setError] = useState();
