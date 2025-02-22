@@ -1,7 +1,9 @@
 import React from "react";
 import styled from "styled-components";
+import { styles } from "../../lib/Elements";
 
 const RootDiv = styled.div`
+  ${styles.sheet}
   max-height: 300px;
   overflow-y: auto;
   min-width: 300px;
@@ -25,15 +27,12 @@ export const OfferMapTooltip = ({ offers }) => {
         .sort((x, y) => x.price - y.price)
         .map((offer) => (
           <div key={offer.id}>
-            <b>{offer.price}</b>
-            <br />
-            {offer.address}
-            {offer.diff && formatDiff(offer.diff)}
-            <br />
+            $<b>{offer.price}</b> &middot;{" "}
+            {offer.address != "n/a" && offer.address}
             <a href={offer.url} target="_blank" rel="noreferrer">
               {offerProvider(offer)}
             </a>{" "}
-            |&nbsp;
+            &middot;&nbsp;
             <a
               href={route(null, { latitude: offer.lat, longitude: offer.lon })}
               target="_blank"
@@ -50,5 +49,3 @@ export const OfferMapTooltip = ({ offers }) => {
 // &origin=${from.latitude},${from.longitude}
 const route = (from, to) =>
   `https://www.google.com/maps/dir/?api=1&destination=${to.latitude},${to.longitude}`;
-
-const formatDiff = (diff) => (diff < 0 ? "&minus;" : "+") + Math.abs(diff);

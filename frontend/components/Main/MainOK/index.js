@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { API } from "../../../api";
-import { Clusters, InfoBox, SlippyMap } from "../../../rsm/index";
+import { Clusters, Pin, SlippyMap } from "../../../rsm/index";
 import { getSetting, loadFilter, saveFilter, setSetting } from "../../../state";
 import { Shy } from "../../lib/Shy";
 import { clamp, useDebouncedCallback } from "../../util";
@@ -181,9 +181,9 @@ export const MainOk = () => {
       >
         <Clusters threshold={30} objects={$objects} render={$renderCluster} />
         {selectedOffers && (
-          <InfoBox coords={selectedOffers.coords} onClick={stop}>
+          <Pin coords={selectedOffers.coords} onClick={stop}>
             <OfferMapTooltip offers={selectedOffers.list} />
-          </InfoBox>
+          </Pin>
         )}
       </SlippyMap>
       <Shy
