@@ -136,7 +136,7 @@ export const MainOk = () => {
         return;
       }
       clearTimeout(controllerState.zoomTimer);
-      controllerState.zoomSpeed = event.deltaY / 2000;
+      controllerState.zoomSpeed = -event.deltaY / 2000;
       $zoomTick();
     },
     [controllerState, $zoomTick]
