@@ -53,7 +53,7 @@ export default (db, storage, mailer, log, datadir) => {
       storage
         .getSubscribers()
         .then((subscribers) =>
-          notifySubscribers(subscribers, added, mailer, time, db)
+          notifySubscribers(subscribers, added, mailer, time)
         )
         .catch((err) => {
           log.error(`notification failed: ${err.message}`, { err });

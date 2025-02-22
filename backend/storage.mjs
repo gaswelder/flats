@@ -83,7 +83,7 @@ const patches = [
   {
     v: 22,
     async f(conn) {
-      await conn.q`...`;
+      // await conn.q`...`;
     },
   },
 ];
@@ -157,6 +157,11 @@ export const getdb = (pool) => {
       return setValue(db, name, value);
     },
 
+    async getUsers() {
+      const r = await db.q`select * from users`;
+      return r.rows;
+    },
+
     async getSubscribers() {
       const res = await pool.query(`select * from subscribers`);
       return res.rows.map((row) => {
@@ -169,16 +174,6 @@ export const getdb = (pool) => {
           maxRadius: row.max_radius,
         };
       });
-    },
-
-    async getSubscriberByEmail(email) {
-      const r = await db.q`select * from subscribers where email=${email}`;
-      return r.rows[0];
-    },
-
-    async getUsers() {
-      const r = await db.q`select * from users`;
-      return r.rows;
     },
 
     async addSubscriber(s) {
