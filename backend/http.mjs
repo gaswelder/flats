@@ -55,14 +55,21 @@ export const createApp = (core) => {
     })
     .use(cors())
     .use(express.static("frontend/dist"))
+    .get("/admin", (req, res) => {
+      if (req.path.endsWith("/")) {
+        res.redirect("updates");
+      } else {
+        res.redirect("admin/updates");
+      }
+    })
+    .get("/admin/users", adminAuth, async (req, res) => {
+      res.send(await adminViews.users(core));
+    })
     .get("/admin/updates", adminAuth, async (req, res) => {
       res.send(await adminViews.updates(core));
     })
     .get("/admin/subscriptions", adminAuth, async (req, res) => {
       res.send(await adminViews.subscriptions(core));
-    })
-    .get("/admin/users", adminAuth, async (req, res) => {
-      res.send(await adminViews.users(core));
     })
     .post(
       "/admin/subscriptions",
@@ -104,9 +111,9 @@ export const createApp = (core) => {
         const token = await core.adminLogin(login, password);
         if (token) {
           res.cookie("token", token, { maxAge: 1000 * 3600 * 24 });
-          res.redirect("../admin/updates");
+          res.redirect("updates");
         } else {
-          res.send(await adminViews.login("wrong login / password"));
+          res.send(await adminViews.login("wrong login or password"));
         }
       }
     )
