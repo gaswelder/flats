@@ -1,45 +1,16 @@
 import dotenv from "dotenv";
-import mailjet from "node-mailjet";
 import pg from "pg";
-import service from "./core.mjs";
+import createCore from "./core.mjs";
 import { createApp } from "./http.mjs";
 import { batcher } from "./lib/batcher.mjs";
 import { pgx } from "./lib/pgx.mjs";
 import { log } from "./lib/slog.mjs";
+import { getMailer } from "./mailer.mjs";
 import { getStamp } from "./stamp.mjs";
 import { getdb, migrate } from "./storage.mjs";
 import { timer } from "./timer.mjs";
 
 dotenv.config();
-
-const getMailer = (spec, emailFrom) => {
-  if (!emailFrom) {
-    throw new Error("emailFrom is missing");
-  }
-  const i = spec.indexOf(":");
-  const type = spec.substring(0, i);
-  if (type != "mailjet") {
-    throw new Error(`expected mailjet env var in NOTIFIER`);
-  }
-  const params = spec.substring(i + 1, spec.length);
-  const [key, secret] = params.split(":");
-  const mailClient = mailjet.connect(key, secret);
-  return {
-    send(email, subject, text) {
-      const request = mailClient.post("send", { version: "v3.1" }).request({
-        Messages: [
-          {
-            From: { Email: emailFrom, Name: "pi" },
-            To: [{ Email: email, Name: "" }],
-            Subject: subject,
-            TextPart: text,
-          },
-        ],
-      });
-      return request;
-    },
-  };
-};
 
 const main = async () => {
   const config = {
@@ -67,20 +38,20 @@ const main = async () => {
   const mailer = getMailer(config.NOTIFIER, config.NOTIFIER_FROM);
   const db = pgx(pool);
   const storage = getdb(pool);
-  const srv = service(db, storage, mailer, log, config.DATADIR);
+  const core = createCore(db, storage, mailer, log, config.DATADIR);
 
   const cmd = process.argv[2];
   if (cmd) {
-    await cli(pool, srv, cmd, process.argv.slice(3));
+    await cli(pool, core, cmd, process.argv.slice(3));
   } else {
-    await serve(pool, srv, storage, mailer, config.ADMIN_EMAIL);
+    await serve(pool, core, storage);
   }
 };
 
-const serve = async (pool, srv, storage, mailer, adminEmail) => {
+const serve = async (pool, core, storage) => {
   await migrate(pool, log);
   const PORT = process.env.PORT || 8000;
-  const app = createApp(srv);
+  const app = createApp(core);
   app.listen(PORT, "localhost", () => {
     log.info("web server started on port " + PORT);
   });
