@@ -44,7 +44,7 @@ const getEmails = (newOffers, now, subscriber) => {
     .filter(Boolean)
     .sort((a, b) => a.radius - b.radius);
   if (matches.length == 0) {
-    return;
+    return [];
   }
   log.info(`${matches.length} matches for ${subscriber.email}`);
 
