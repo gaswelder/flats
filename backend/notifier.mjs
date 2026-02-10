@@ -59,10 +59,14 @@ const getEmails = (newOffers, now, subscriber) => {
       },
     ];
   }
-  return matches.map((match) => {
+  return matches.map((m) => {
     return {
-      subject: `Flats update: ${match.offer.price} (${match.offer.originalPrice}) ${match.offer.rooms}r, R = ${match.radius} m`,
-      body: formatList([match], subscriberCoords),
+      subject:
+        "Flats update:" +
+        ` ${m.offer.price} (${m.offer.originalPrice})` +
+        ` ${m.offer.rooms}r` +
+        `, R = ${Math.round(m.radius)} m`,
+      body: formatList([m], subscriberCoords),
     };
   });
 };
