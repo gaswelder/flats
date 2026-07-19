@@ -140,7 +140,7 @@ export const createApp = (core) => {
     )
     .put(
       "/api/snapshots/:id/:ts",
-      express.json({ limit: "10MB" }),
+      express.json({ limit: "50MB" }),
       serveJson(async (req) => {
         await core.addSnapshot(req.params.id, req.body, req.params.ts);
         return "ok";
