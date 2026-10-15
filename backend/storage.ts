@@ -1,6 +1,7 @@
-import { diff } from "./lib/diff.mjs";
-import { pgx } from "./lib/pgx.mjs";
-import { Offer } from "./offer.mjs";
+import { diff } from "./lib/diff.ts";
+import { pgx, PgDB } from "./lib/pgx.ts";
+import { Offer } from "./offer.ts";
+import { Pool } from "pg";
 
 const init = [
   // "meta" is a key-value table for internal purposes. For example, last
@@ -82,13 +83,20 @@ const init = [
 const patches = [
   {
     v: 22,
-    async f(conn) {
+    async f(conn: PgDB, _logger?: Logger) {
       // await conn.q`...`;
     },
   },
 ];
 
-export const migrate = async (pool0, logger) => {
+type Logger = {
+  info: (msg: string, data?: any) => void;
+};
+
+export const migrate = async (
+  pool0: Pool,
+  logger: Logger
+) => {
   const db = pgx(pool0);
   const r = await db.q`SELECT EXISTS (
     SELECT FROM information_schema.tables
@@ -113,7 +121,7 @@ export const migrate = async (pool0, logger) => {
   }
 };
 
-const getValue = async (t, name) => {
+const getValue = async (t: PgDB, name: string) => {
   const { rows } = await t.query(
     `select v from meta where k = $1 order by ts desc limit 1`,
     [name]
@@ -124,36 +132,36 @@ const getValue = async (t, name) => {
   return JSON.parse(rows[0].v);
 };
 
-const setValue = async (t, name, v) => {
+const setValue = async (t: PgDB, name: string, v: any) => {
   await t.query("insert into meta (ts, k, v) values (now(), $1, $2)", [
     name,
     JSON.stringify(v),
   ]);
 };
 
-const getVersion = async (t) => {
+const getVersion = async (t: PgDB) => {
   const v = await getValue(t, "version");
   return v || 0;
 };
 
-const setVersion = async (t, v) => {
+const setVersion = async (t: PgDB, v: number) => {
   await setValue(t, "version", v);
 };
 
-const squareCoords = (lat, lon) => {
+const squareCoords = (lat: number, lon: number): [number, number] => {
   // 1 deg lat ~ 100 km
   const x = Math.floor((lon + 90) * 100);
   const y = Math.floor((lat + 180) * 100);
   return [x, y];
 };
 
-export const getdb = (pool) => {
+export const getdb = (pool: Pool) => {
   const db = pgx(pool);
   return {
-    getValue(name) {
+    getValue(name: string) {
       return getValue(db, name);
     },
-    setValue(name, value) {
+    setValue(name: string, value: any) {
       return setValue(db, name, value);
     },
 
@@ -164,7 +172,7 @@ export const getdb = (pool) => {
 
     async getSubscribers() {
       const res = await pool.query(`select * from subscribers`);
-      return res.rows.map((row) => {
+      return res.rows.map((row: any) => {
         return {
           id: row.id,
           email: row.email,
@@ -176,7 +184,13 @@ export const getdb = (pool) => {
       });
     },
 
-    async addSubscriber(s) {
+    async addSubscriber(s: {
+      email: string;
+      lat: number;
+      lon: number;
+      maxPrice: number;
+      maxRadius: number;
+    }) {
       await db.batchInsert("subscribers", [
         {
           email: s.email,
@@ -188,7 +202,7 @@ export const getdb = (pool) => {
       ]);
     },
 
-    async deleteSubscriber(id) {
+    async deleteSubscriber(id: number | string) {
       await db.q`delete from subscribers where id=${id}`;
     },
 
@@ -199,15 +213,20 @@ export const getdb = (pool) => {
       return time;
     },
 
-    mergeSnapshot(tick, newOffers, name, time) {
+    mergeSnapshot(
+      tick: (name: string, n?: any) => void,
+      newOffers: Offer[],
+      name: string,
+      time: string | Date
+    ) {
       return db.transaction(async (tr) => {
         // Compare with the last snapshot from this worker.
         const r1 =
           await tr.q`select * from current_offers where snapshot_name = ${name}`;
-        const oldOffers = r1.rows.map(Offer.parseFromDB);
+        const oldOffers = r1.rows.map((row: any) => Offer.parseFromDB(row));
         tick("get_current_offers");
 
-        const d = diff(oldOffers, newOffers, (x) => x.id);
+        const d = diff(oldOffers, newOffers, (x: Offer) => x.id);
         const added = d.onlyRight;
         const removed = d.onlyLeft;
         const same = d.both
@@ -232,7 +251,7 @@ export const getdb = (pool) => {
         tick("remove");
         if (added.length > 0) {
           const r1 = await tr.q`select id from offers`;
-          const knownOffers = new Set(r1.rows.map((x) => x.id));
+          const knownOffers = new Set(r1.rows.map((x: any) => x.id));
           await tr.batchInsert(
             "offers",
             added
@@ -294,7 +313,10 @@ export const getdb = (pool) => {
       });
     },
 
-    async getHistory(filter) {
+    async getHistory(filter: {
+      lat: [number, number];
+      lon: [number, number];
+    }) {
       const [x1, y1] = squareCoords(filter.lat[0], filter.lon[0]);
       const [x2, y2] = squareCoords(filter.lat[1], filter.lon[1]);
       const r =
@@ -304,7 +326,7 @@ export const getdb = (pool) => {
           and y between ${y1} and ${y2}
         group by ts
         order by ts`;
-      return r.rows.map((row) => {
+      return r.rows.map((row: any) => {
         return {
           ts: row.ts,
           count: parseInt(row.count),
@@ -317,22 +339,22 @@ export const getdb = (pool) => {
       const r = await db.q`select * from logs order by t desc limit 20`;
       return r.rows;
     },
-    async addSnapshotLog(name, count) {
+    async addSnapshotLog(name: string, count: number) {
       await db.batchInsert("logs", [{ t: new Date(), count, name }]);
     },
 
     async getSnapshotTimes() {
       const r = await db.q`select distinct ts from price_snapshots`;
-      return r.rows.map((x) => x.ts);
+      return r.rows.map((x: any) => x.ts);
     },
 
-    async *getSnapshots() {
+    async *getSnapshots(): AsyncGenerator<{ ts: Date }> {
       let cursor = new Date("2000-01-01");
       for (;;) {
         let r =
           await db.q`select distinct ts from price_snapshots where ts > ${cursor} order by ts limit 1000`;
-        if (r.rows.length == 0) break;
-        const tss = r.rows.map((row) => row.ts);
+        if (r.rows.length === 0) break;
+        const tss = r.rows.map((row: any) => row.ts);
         for (const ts of tss) {
           yield { ts };
           cursor = ts;
@@ -340,7 +362,7 @@ export const getdb = (pool) => {
       }
     },
 
-    async generateSnapshotSquares(ts) {
+    async generateSnapshotSquares(ts: Date) {
       // Skip if the squares already exist for this snapshot.
       let r =
         await db.q`select * from history_squares where ts = ${ts} limit 1`;
@@ -352,7 +374,10 @@ export const getdb = (pool) => {
           where ts = ${ts}`;
       const offers = r.rows;
 
-      const squares = {};
+      const squares: Record<
+        string,
+        { ts: Date; x: number; y: number; sum: number; count: number }
+      > = {};
       for (const o of offers) {
         const [x, y] = squareCoords(o.lat, o.lon);
         const key = [x, y].join(",");
@@ -369,8 +394,10 @@ export const getdb = (pool) => {
       return Object.keys(squares).length;
     },
 
-    async deleteSnapshots(tss) {
+    async deleteSnapshots(tss: Date[]) {
       await db.query(`delete from price_snapshots where ts = any($1)`, [tss]);
     },
   };
 };
+
+export type Storage = ReturnType<typeof getdb>;

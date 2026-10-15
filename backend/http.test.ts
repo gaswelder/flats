@@ -1,14 +1,21 @@
-import { createApp } from "./http.mjs";
+import { createApp } from "./http.ts";
 import request from "supertest";
 import * as assert from "assert";
 
 describe("http", () => {
   it("put a snapshot", async () => {
-    const snapshots = [];
+    const snapshots: any[] = [];
     const core = {
-      async addSnapshot(areaId, offers, ts) {
+      checkAdminToken: async () => true,
+      storage: () => ({ deleteSubscriber: async () => {} }),
+      addSubscriber: async () => {},
+      getOffers: async () => [],
+      getHistory: async () => [],
+      async addSnapshot(areaId: string, offers: any, ts: string) {
         snapshots.push({ areaId, offers, ts });
       },
+      login: async () => ({ ok: false }),
+      adminLogin: async () => null,
     };
     const app = createApp(core);
     const ts = "2023-08-20T20:00:00.000Z";

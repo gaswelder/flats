@@ -1,7 +1,7 @@
-import * as tpl from "./tpl.mjs";
-import { wrapper } from "./wrapper.mjs";
+import * as tpl from "./tpl.ts";
+import { wrapper } from "./wrapper.ts";
 
-export default async (err) => {
+export default async (err?: any): Promise<string> => {
   return wrapper(`
     <p>${tpl.esc(err)}</p>
     <form method="post">

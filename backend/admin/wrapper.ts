@@ -1,4 +1,4 @@
-export const wrapper = (body) => {
+export const wrapper = (body: string): string => {
   return `
 <!DOCTYPE html>
 <html>

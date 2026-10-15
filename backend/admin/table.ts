@@ -1,21 +1,21 @@
-import * as tpl from "./tpl.mjs";
+import * as tpl from "./tpl.ts";
 
-export default (xs) => {
-  if (xs.length == 0) {
+export default (xs: any[]) => {
+  if (xs.length === 0) {
     return "";
   }
   const keys = Object.keys(xs[0]);
 
   return `<table border="1">
       ${trh(keys)}
-      ${xs.map((x) => tr(keys, x)).join("")}
+      ${xs.map((x: any) => tr(keys, x)).join("")}
     </table>`;
 };
 
-const trh = (keys) => {
+const trh = (keys: string[]) => {
   return `<tr>${keys.map((k) => `<th>${tpl.esc(k)}</th>`).join("")}</tr>`;
 };
 
-const tr = (keys, x) => {
+const tr = (keys: string[], x: any) => {
   return `<tr>${keys.map((k) => `<td>${tpl.esc(x[k])}</td>`).join("")}</tr>`;
 };

@@ -1,7 +1,10 @@
-export const batcher = (size, flush) => {
-  const items = [];
+export const batcher = (
+  size: number,
+  flush: (items: any[]) => Promise<void>
+) => {
+  const items: any[] = [];
   return {
-    async add(...xs) {
+    async add(...xs: any[]) {
       for (const x of xs) {
         if (items.length > size) {
           await flush(items);

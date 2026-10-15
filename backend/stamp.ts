@@ -1,4 +1,4 @@
-export const getStamp = (type) => {
+export const getStamp = (type: "monthly" | "daily"): string => {
   const ts = new Date();
   const y = ts.getFullYear();
   const m = (ts.getMonth() + 1).toString().padStart(2, "0");

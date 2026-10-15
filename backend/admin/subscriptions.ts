@@ -1,8 +1,8 @@
-import nav from "./nav.mjs";
-import table from "./table.mjs";
-import { wrapper } from "./wrapper.mjs";
+import nav from "./nav.ts";
+import table from "./table.ts";
+import { wrapper } from "./wrapper.ts";
 
-export default async (core) => {
+export default async (core: any): Promise<string> => {
   const subscribers = await core.storage().getSubscribers();
   return wrapper(`
     ${nav()}
@@ -10,7 +10,7 @@ export default async (core) => {
 
     <form method="post">
     ${table(
-      subscribers.map((x) => {
+      subscribers.map((x: any) => {
         return {
           ...x,
           del: { raw: `<button name="del" value="${x.id}">del</button>` },

@@ -1,13 +1,13 @@
 import * as assert from "assert";
 import pg from "pg";
 import * as timers from "timers/promises";
-import service from "./core.mjs";
-import { pgx } from "./lib/pgx.mjs";
-import { getdb, migrate } from "./storage.mjs";
+import service from "./core.ts";
+import { pgx } from "./lib/pgx.ts";
+import { getdb, migrate } from "./storage.ts";
 
-const withFakeDate = async (d, f) => {
-  const original = Date;
-  global.Date = class extends Date {
+const withFakeDate = async (d: Date, f: () => Promise<void>) => {
+  const original = (global as any).Date;
+  (global as any).Date = class extends Date {
     constructor() {
       super(d);
     }
@@ -15,11 +15,11 @@ const withFakeDate = async (d, f) => {
   try {
     await f();
   } finally {
-    global.Date = original;
+    (global as any).Date = original;
   }
 };
 
-const cleanups = [];
+const cleanups: (() => void)[] = [];
 const cleanup = () => {
   cleanups.forEach((f) => {
     f();
@@ -37,11 +37,20 @@ const setup = async () => {
   const pool = new pg.Pool({
     connectionString: "psql://postgres:postgres@localhost:5432/flats_test",
   });
-  const logger = { ...console, info: () => {} };
+  const logger = {
+    ...console,
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+  } as {
+    info: (msg: string, data?: any) => void;
+    warn: (msg: string, data?: any) => void;
+    error: (msg: string, data?: any) => void;
+  };
   await migrate(pool, logger);
-  const mailboxes = new Map();
+  const mailboxes = new Map<string, any[]>();
   const mailer = {
-    send(email, subject, body) {
+    send(email: string, subject: string, body: string) {
       const mb = mailboxes.get(email);
       if (mb) {
         mb.push({ subject, body });
@@ -58,13 +67,13 @@ const setup = async () => {
   return {
     db: pool,
     service: s,
-    popMail: (email) => {
+    popMail: (email: string) => {
       const b = mailboxes.get(email);
       if (!b) {
         return [];
       }
       const mails = [...b];
-      b.length = [];
+      b.length = 0;
       return mails;
     },
   };
@@ -110,10 +119,10 @@ describe("backend", () => {
     );
 
     const all = await s.getOffers(defFilter, 10);
-    assert.deepEqual(new Set(all.map((x) => x.id)), new Set([1, 2]));
+    assert.deepEqual(new Set(all.map((x: any) => x.id)), new Set([1, 2]));
 
     const cheap = await s.getOffers({ ...defFilter, maxPrice: 300 }, 10);
-    assert.deepEqual(new Set(cheap.map((x) => x.id)), new Set([1]));
+    assert.deepEqual(new Set(cheap.map((x: any) => x.id)), new Set([1]));
 
     const nearby = await s.getOffers(
       {
@@ -123,7 +132,7 @@ describe("backend", () => {
       },
       10
     );
-    assert.deepEqual(new Set(nearby.map((x) => x.id)), new Set([2]));
+    assert.deepEqual(new Set(nearby.map((x: any) => x.id)), new Set([2]));
   });
 
   it("doesn't crash on duplicates in a snapshot", async () => {
@@ -266,7 +275,7 @@ describe("backend", () => {
 
     const offers = await t.service.getOffers(defFilter, 10);
     assert.deepEqual(
-      offers.map((x) => x.id),
+      offers.map((x: any) => x.id),
       ["1", "2"]
     );
   });
@@ -301,7 +310,8 @@ describe("backend", () => {
     assert.deepEqual(t.popMail("foo@example.com"), [
       {
         subject: "Flats update: 300 (300 dollars) 1r, R = 0 m",
-        body: "$300 (300 dollars) 1r at street name, 12, R = 0 m\nhttps://www.example.com/1\nroute (YA): https://yandex.by/maps/?rtext=20,30~20,30&rtt=mt\nroute (GO): https://www.google.com/maps/dir/?api=1&origin=20,30&destination=20,30\n",
+        body:
+          "$300 (300 dollars) 1r at street name, 12, R = 0 m\nhttps://www.example.com/1\nroute (YA): https://yandex.by/maps/?rtext=20,30~20,30&rtt=mt\nroute (GO): https://www.google.com/maps/dir/?api=1&origin=20,30&destination=20,30\n",
       },
     ]);
   });

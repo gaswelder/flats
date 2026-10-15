@@ -1,30 +1,48 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
-import { adminViews } from "./admin/index.mjs";
-import { log } from "./lib/slog.mjs";
+import { adminViews } from "./admin/index.ts";
+import { log } from "./lib/slog.ts";
 
-const parseFilter = (req) => {
-  const byVal = (a, b) => a - b;
+type Core = {
+  checkAdminToken(token: string): Promise<boolean>;
+  storage: () => {
+    deleteSubscriber(id: string | number): Promise<void>;
+  };
+  addSubscriber(s: any): any;
+  getOffers(filter: any, limit: number): Promise<any[]>;
+  getHistory(filter: any): Promise<any>;
+  addSnapshot(areaId: string, offers: any, ts: string): Promise<any>;
+  login(user: string, password: string): Promise<any>;
+  adminLogin(name: string, password: string): Promise<string | null>;
+};
+
+const parseFilter = (req: express.Request) => {
+  const byVal = (a: number, b: number) => a - b;
+  const q = req.query as any;
   return {
-    maxPrice: parseInt(req.query["max-price"], 10) || 0,
-    rooms: (req.query["rooms"] || "")
+    maxPrice: parseInt(String(q["max-price"] ?? ""), 10) || 0,
+    rooms: String(q["rooms"] ?? "")
       .split(",")
       .map((s) => parseInt(s, 10))
       .filter(Boolean),
-    lat: req.query["lat"]
+    lat: (q["lat"] as string | undefined)
       ?.split(",")
       .map((x) => parseFloat(x))
       .sort(byVal),
-    lon: req.query["lon"]
+    lon: (q["lon"] as string | undefined)
       ?.split(",")
       .map((x) => parseFloat(x))
       .sort(byVal),
   };
 };
 
-export const createApp = (core) => {
-  const adminAuth = (req, res, next) => {
+export const createApp = (core: Core) => {
+  const adminAuth = (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
     cookieParser()(req, res, async () => {
       const token = req.cookies.token;
       try {
@@ -33,7 +51,7 @@ export const createApp = (core) => {
         } else {
           res.redirect("login");
         }
-      } catch (err) {
+      } catch (err: any) {
         log.error(`error in adminAuth: ${err.message}`, { err });
         res.sendStatus(500);
       }
@@ -76,7 +94,7 @@ export const createApp = (core) => {
       adminAuth,
       express.urlencoded({ extended: false }),
       async (req, res) => {
-        const b = req.body;
+        const b = req.body as any;
         try {
           if (b.del) {
             await core.storage().deleteSubscriber(b.del);
@@ -92,7 +110,7 @@ export const createApp = (core) => {
           });
           res.redirect("subscriptions");
           return;
-        } catch (err) {
+        } catch (err: any) {
           log.error(err.message, { err });
           res.sendStatus(500);
           return;
@@ -106,8 +124,8 @@ export const createApp = (core) => {
       "/admin/login",
       express.urlencoded({ extended: false }),
       async (req, res) => {
-        const login = req.body.login;
-        const password = req.body.password;
+        const login = req.body.login as string;
+        const password = req.body.password as string;
         const token = await core.adminLogin(login, password);
         if (token) {
           res.cookie("token", token, { maxAge: 1000 * 3600 * 24 });
@@ -119,13 +137,13 @@ export const createApp = (core) => {
     )
     .get(
       "/api/offers",
-      serveJson(async (req) => {
+      serveJson(async (req: express.Request) => {
         const filter = parseFilter(req);
         const offers = await core.getOffers(filter, 5000);
         return {
           offers,
           error:
-            offers.length == 5000
+            offers.length === 5000
               ? "hit results limit, try narrowing the area"
               : null,
         };
@@ -133,7 +151,7 @@ export const createApp = (core) => {
     )
     .get(
       `/api/history`,
-      serveJson(async (req) => {
+      serveJson(async (req: express.Request) => {
         const filter = parseFilter(req);
         return core.getHistory(filter);
       })
@@ -141,7 +159,7 @@ export const createApp = (core) => {
     .put(
       "/api/snapshots/:id/:ts",
       express.json({ limit: "50MB" }),
-      serveJson(async (req) => {
+      serveJson(async (req: express.Request) => {
         await core.addSnapshot(req.params.id, req.body, req.params.ts);
         return "ok";
       })
@@ -149,16 +167,18 @@ export const createApp = (core) => {
     .post(
       "/api/login",
       express.json(),
-      serveJson(async (req) => {
+      serveJson(async (req: express.Request) => {
         return core.login(req.body.user, req.body.password);
       })
     );
 };
 
-const serveJson = (f) => async (req, res) => {
+const serveJson = (
+  f: (req: express.Request) => any
+) => async (req: express.Request, res: express.Response) => {
   try {
     res.json(await f(req));
-  } catch (err) {
+  } catch (err: any) {
     log.error(`${req.path}: ${err.message}`, err);
     res.status(500).json({ err });
   }

@@ -1,4 +1,4 @@
-export const esc = (s) => {
+export const esc = (s: any): string => {
   if (s === undefined) {
     return "";
   }

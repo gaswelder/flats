@@ -1,19 +1,19 @@
 import dotenv from "dotenv";
-import pg from "pg";
-import createCore from "./core.mjs";
-import { createApp } from "./http.mjs";
-import { batcher } from "./lib/batcher.mjs";
-import { pgx } from "./lib/pgx.mjs";
-import { log } from "./lib/slog.mjs";
-import { getMailer } from "./mailer.mjs";
-import { getStamp } from "./stamp.mjs";
-import { getdb, migrate } from "./storage.mjs";
-import { timer } from "./timer.mjs";
+import { Pool } from "pg";
+import createCore from "./core.ts";
+import { createApp } from "./http.ts";
+import { batcher } from "./lib/batcher.ts";
+import { pgx } from "./lib/pgx.ts";
+import { log } from "./lib/slog.ts";
+import { getMailer } from "./mailer.ts";
+import { getStamp } from "./stamp.ts";
+import { getdb, migrate } from "./storage.ts";
+import { timer } from "./timer.ts";
 
 dotenv.config();
 
 const main = async () => {
-  const config = {
+  const config: Record<string, string> = {
     DATABASE_URL: "postgres:postgres@localhost:5432",
     ADMIN_EMAIL: "",
     DATADIR: ".",
@@ -22,16 +22,16 @@ const main = async () => {
   };
   for (const k in config) {
     if (k in process.env) {
-      config[k] = process.env[k];
+      config[k] = process.env[k]!;
     }
   }
 
-  if (config.ADMIN_EMAIL == "") {
+  if (config.ADMIN_EMAIL === "") {
     log.warn("ADMIN_EMAIL is not set, maintenance notifications are disabled");
   }
 
-  const pool = new pg.Pool({ connectionString: config.DATABASE_URL });
-  pool.on("error", (err) => {
+  const pool = new Pool({ connectionString: config.DATABASE_URL });
+  pool.on("error", (err: Error) => {
     log.error(`postgres pool error: ${err.message}`);
   });
 
@@ -48,9 +48,9 @@ const main = async () => {
   }
 };
 
-const serve = async (pool, core, storage) => {
+const serve = async (pool: Pool, core: any, storage: any) => {
   await migrate(pool, log);
-  const PORT = process.env.PORT || 8000;
+  const PORT = Number(process.env.PORT || 8000);
   const app = createApp(core);
   app.listen(PORT, "localhost", () => {
     log.info("web server started on port " + PORT);
@@ -65,13 +65,17 @@ const serve = async (pool, core, storage) => {
       const n = await storage.generateSnapshotSquares(ts);
       tick("generate_squares", n);
       log.info("generated squares");
-    } catch (err) {
+    } catch (err: any) {
       log.error("snapshot failed: " + err.message, { err });
     }
   });
 };
 
-const scheduleDaily = (storage, key, f) => {
+const scheduleDaily = (
+  storage: any,
+  key: string,
+  f: () => Promise<void>
+) => {
   setInterval(async () => {
     const now = getStamp("daily");
     const last = await storage.getValue(key);
@@ -83,24 +87,29 @@ const scheduleDaily = (storage, key, f) => {
   }, 1000 * 3600);
 };
 
-const pruneSnapshots = async (storage) => {
+const pruneSnapshots = async (storage: any) => {
   // For each date, keep only the latest snapshot and delete others.
   // Don't need hour presision in snapshots.
   const tss = await storage.getSnapshotTimes();
-  const buckets = Object.groupBy(tss, (ts) =>
+  const buckets = (Object as any).groupBy(tss, (ts: Date) =>
     ts.toISOString().substring(0, 10)
-  );
-  const del = batcher(100, storage.deleteSnapshots);
+  ) as Record<string, Date[]>;
+  const del = batcher(100, (items: any[]) => storage.deleteSnapshots(items));
   for (const [k, v] of Object.entries(buckets)) {
-    if (v.length == 1) continue;
-    v.sort((a, b) => b.getTime() - a.getTime());
+    if (v.length === 1) continue;
+    v.sort((a: Date, b: Date) => b.getTime() - a.getTime());
     console.log(k, v);
-    await del.add(...v.slice(1, v.length));
+    await del.add(...v);
   }
   await del.end();
 };
 
-const cli = async (pool, srv, cmd, args) => {
+const cli = async (
+  pool: Pool,
+  srv: any,
+  cmd: string,
+  args: string[]
+) => {
   const storage = getdb(pool);
   switch (cmd) {
     case "setup":

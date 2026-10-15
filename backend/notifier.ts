@@ -1,16 +1,17 @@
 import haversine from "haversine-distance";
-import { log } from "./lib/slog.mjs";
+import { log } from "./lib/slog.ts";
+import type { Mailer } from "./mailer.ts";
 
 export const notifySubscribers = async (
-  subscribers,
-  newOffers,
-  mailer,
-  time
+  subscribers: any[],
+  newOffers: any[],
+  mailer: Mailer,
+  time: string
 ) => {
   const now = new Date(time);
 
-  const emails = subscribers.flatMap((s) => {
-    return getEmails(newOffers, now, s).map((m) => {
+  const emails = subscribers.flatMap((s: any) => {
+    return getEmails(newOffers, now, s).map((m: any) => {
       return { address: s.email, subject: m.subject, body: m.body };
     });
   });
@@ -22,13 +23,13 @@ export const notifySubscribers = async (
     } catch (err) {
       log.error(`failed to send email to ${m.address}`, { err });
     }
-  }
+  };
 };
 
-const getEmails = (newOffers, now, subscriber) => {
+const getEmails = (newOffers: any[], now: Date, subscriber: any) => {
   const subscriberCoords = [subscriber.lat, subscriber.lon];
   const matches = newOffers
-    .map((offer) => {
+    .map((offer: any) => {
       if (offer.price > subscriber.max_price) {
         return null;
       }
@@ -42,24 +43,21 @@ const getEmails = (newOffers, now, subscriber) => {
       return { offer, radius };
     })
     .filter(Boolean)
-    .sort((a, b) => a.radius - b.radius);
-  if (matches.length == 0) {
+    .sort((a: any, b: any) => a.radius - b.radius);
+  if (matches.length === 0) {
     return [];
   }
   log.info(`${matches.length} matches for ${subscriber.email}`);
 
-  // If there are too many matches, combine them into one mail.
   if (matches.length > 3) {
     return [
       {
-        subject: `Flats update ${formatDateTime(now)}: ${
-          matches.length
-        } new matches`,
+        subject: `Flats update ${formatDateTime(now)}: ${matches.length} new matches`,
         body: formatList(matches, subscriberCoords),
       },
     ];
   }
-  return matches.map((m) => {
+  return matches.map((m: any) => {
     return {
       subject:
         "Flats update:" +
@@ -71,29 +69,29 @@ const getEmails = (newOffers, now, subscriber) => {
   });
 };
 
-const formatDateTime = (date) => formatDate(date) + ", " + formatTime(date);
-const formatTime = (date) =>
+const formatDateTime = (date: Date) => formatDate(date) + ", " + formatTime(date);
+const formatTime = (date: Date) =>
   [date.getHours(), date.getMinutes()].map(leadZero).join(":");
-const formatDate = (date) =>
+const formatDate = (date: Date) =>
   [date.getDate(), date.getMonth() + 1].map(leadZero).join(".");
 
-function leadZero(num) {
+function leadZero(num: number) {
   if (num < 10) {
     return "0" + num.toString();
   }
   return num.toString();
 }
 
-function formatList(matches, anchorCoords) {
+function formatList(matches: any[], anchorCoords: number[]) {
   return matches
-    .map((match) => {
+    .map((match: any) => {
       const { offer, radius } = match;
-      const { price, address, rooms, lat, lon } = match.offer;
+      const { price, address, rooms, lat, lon } = offer;
       return [
         `$${price} (${
           offer.originalPrice
         }) ${rooms}r at ${address}, R = ${Math.round(radius)} m`,
-        match.offer.url,
+        offer.url,
         `route (YA): https://yandex.by/maps/?rtext=${anchorCoords[0]},${anchorCoords[1]}~${lat},${lon}&rtt=mt`,
         `route (GO): https://www.google.com/maps/dir/?api=1&origin=${anchorCoords[0]},${anchorCoords[1]}&destination=${lat},${lon}`,
         "",

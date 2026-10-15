@@ -1,12 +1,27 @@
 import bcrypt from "bcrypt";
 import fs from "fs";
-import t from "runtypes";
-import { notifySubscribers } from "./notifier.mjs";
-import { Offer } from "./offer.mjs";
-import { getStamp } from "./stamp.mjs";
-import { timer } from "./timer.mjs";
+import * as t from "runtypes";
+import { notifySubscribers } from "./notifier.ts";
+import { Offer } from "./offer.ts";
+import { getStamp } from "./stamp.ts";
+import { timer } from "./timer.ts";
+import type { PgDB } from "./lib/pgx.ts";
+import type { Storage } from "./storage.ts";
+import type { Mailer } from "./mailer.ts";
 
-export default (db, storage, mailer, log, datadir) => {
+type Logger = {
+  info: (msg: string, data?: any) => void;
+  warn: (msg: string, data?: any) => void;
+  error: (msg: string, data?: any) => void;
+};
+
+export default (
+  db: PgDB,
+  storage: Storage,
+  mailer: Mailer,
+  log: Logger,
+  datadir: string
+) => {
   return {
     /**
      * Updates a named snapshot.
@@ -14,11 +29,11 @@ export default (db, storage, mailer, log, datadir) => {
      * A worker collects a complete snapshot for its area and posts it here.
      * Here the snapshot is merged into the current offers table using diffs.
      *
-     * @param {string} name
-     * @param {Offer[]} items
-     * @param {string} time ISO time string for the snapshot's date
+     * @param name
+     * @param items
+     * @param time ISO time string for the snapshot's date
      */
-    async addSnapshot(name, items, time) {
+    async addSnapshot(name: string, items: any[], time: string) {
       log.info("got a snapshot", {
         name,
         count: items.length,
@@ -28,8 +43,8 @@ export default (db, storage, mailer, log, datadir) => {
       const tick = timer(log);
 
       // Parse the offers data.
-      const newOffers = [];
-      const ids = new Set();
+      const newOffers: Offer[] = [];
+      const ids = new Set<string>();
       for (const item of items) {
         const x = Offer.parseFromWorker(item);
         if (!ids.has(x.id)) {
@@ -73,10 +88,10 @@ export default (db, storage, mailer, log, datadir) => {
     /**
      * Returns a list of current offers that fit the given filter.
      *
-     * @param {Filter} filter
-     * @param {number} limit
+     * @param filter
+     * @param limit
      */
-    async getOffers(filter0, limit) {
+    async getOffers(filter0: any, limit: number) {
       if (limit === undefined) {
         throw new Error(`missing the limit argument`);
       }
@@ -87,7 +102,7 @@ export default (db, storage, mailer, log, datadir) => {
           lat: t.Array(t.Number),
           lon: t.Array(t.Number),
         })
-        .check(filter0);
+        .check(filter0) as any;
 
       const { rows } = await db.q`
       select id, price, rooms, url, lat, lon, address from current_offers
@@ -98,7 +113,7 @@ export default (db, storage, mailer, log, datadir) => {
         and lon between ${filter.lon[0]} and ${filter.lon[1]}
       limit ${db.inject(limit)}`;
 
-      return rows.map((row) => {
+      return rows.map((row: any) => {
         // Frontend shape
         return {
           ...row,
@@ -110,10 +125,10 @@ export default (db, storage, mailer, log, datadir) => {
     /**
      * Returns a series of historical counts and prices for given area.
      *
-     * @param {Filter} filter
+     * @param filter
      * @returns {{ts: Date, count: number}[]}
      */
-    async getHistory(filter) {
+    async getHistory(filter: any) {
       const h = await storage.getHistory(filter);
       return h;
     },
@@ -121,7 +136,7 @@ export default (db, storage, mailer, log, datadir) => {
     /**
      * Adds a subscription to new offers in the selected area.
      */
-    addSubscriber(s) {
+    addSubscriber(s: any) {
       const obj = t
         .Record({
           email: t.String,
@@ -130,7 +145,7 @@ export default (db, storage, mailer, log, datadir) => {
           maxPrice: t.Number,
           maxRadius: t.Number,
         })
-        .check(s);
+        .check(s) as any;
       return storage.addSubscriber(obj);
     },
 
@@ -142,28 +157,28 @@ export default (db, storage, mailer, log, datadir) => {
       return storage.getSnapshotLogs();
     },
 
-    async addUser(name, password, isAdmin) {
+    async addUser(name: string, password: string, isAdmin = false) {
       const phash = await bcrypt.hash(password, 10);
       await db.batchInsert("users", [
         { name, phash, is_admin: Boolean(isAdmin) },
       ]);
     },
 
-    async checkAdminToken(token) {
+    async checkAdminToken(token: string) {
       const r = await db.q`select * from users where token=${token}`;
-      if (r.rows.length != 1) return false;
+      if (r.rows.length !== 1) return false;
       return r.rows[0].is_admin;
     },
 
-    async adminLogin(name, password) {
+    async adminLogin(name: string, password: string): Promise<string | null> {
       const r = await this.login(name, password);
       if (!r.ok || !r.isAdmin) return null;
-      return r.token;
+      return r.token ?? null;
     },
 
-    async login(name, password) {
+    async login(name: string, password: string) {
       const res = await db.q`select * from users where name=${name}`;
-      if (res.rows.length != 1) {
+      if (res.rows.length !== 1) {
         return { ok: false };
       }
       const r = res.rows[0];
