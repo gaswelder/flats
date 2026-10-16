@@ -74,7 +74,7 @@ const init = [
     id serial,
     name varchar(20) unique,
     is_admin bool not null default false,
-    phash varchar(100),
+    phash varchar(255),
     token varchar(60));`,
 
   // The logs table records upload events.
@@ -86,6 +86,12 @@ const patches = [
     v: 22,
     async f(conn: PgDB, _logger?: Logger) {
       // await conn.q`...`;
+    },
+  },
+  {
+    v: 23,
+    async f(conn: PgDB, _logger?: Logger) {
+      await conn.q`alter table users alter column phash type varchar(255)`;
     },
   },
 ];

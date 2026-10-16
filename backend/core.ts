@@ -1,11 +1,12 @@
-import bcrypt from "bcrypt";
 import fs from "fs";
+import { randomBytes } from "node:crypto";
 import * as t from "runtypes";
 import type { PgDB } from "./lib/pgx.ts";
 import type { Mailer } from "./mailer.ts";
 import { notifySubscribers } from "./notifier.ts";
 import type { OfferData } from "./offer.ts";
 import { Offer } from "./offer.ts";
+import { hashPassword, verifyPassword } from "./password.ts";
 import { getStamp } from "./stamp.ts";
 import type { Storage } from "./storage.ts";
 import { timer } from "./timer.ts";
@@ -157,7 +158,7 @@ export const createCore = (
     },
 
     async addUser(name: string, password: string, isAdmin = false) {
-      const phash = await bcrypt.hash(password, 10);
+      const phash = await hashPassword(password);
       await db.batchInsert("users", [
         { name, phash, is_admin: Boolean(isAdmin) },
       ]);
@@ -181,11 +182,11 @@ export const createCore = (
         return { ok: false };
       }
       const r = res.rows[0];
-      const ok = await bcrypt.compare(password, r.phash);
+      const ok = await verifyPassword(password, r.phash);
       if (!ok) {
         return { ok };
       }
-      const token = await bcrypt.genSalt(1);
+      const token = randomBytes(24).toString("hex");
       await db.q`update users set token = ${token} where id=${r.id}`;
       return { ok, token, isAdmin: r.is_admin };
     },

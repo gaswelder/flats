@@ -55,6 +55,12 @@ const main = async () => {
         break;
       }
 
+      case "add-user": {
+        const [name, password] = args;
+        await core.addUser(name, password, false);
+        break;
+      }
+
       case "add-admin": {
         const [name, password] = args;
         await core.addUser(name, password, true);
