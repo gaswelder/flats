@@ -1,7 +1,8 @@
+import type { Pool } from "pg";
 import { diff } from "./lib/diff.ts";
-import { pgx, PgDB } from "./lib/pgx.ts";
+import type { PgDB } from "./lib/pgx.ts";
+import { pgx } from "./lib/pgx.ts";
 import { Offer } from "./offer.ts";
-import { Pool } from "pg";
 
 const init = [
   // "meta" is a key-value table for internal purposes. For example, last
@@ -93,10 +94,7 @@ type Logger = {
   info: (msg: string, data?: any) => void;
 };
 
-export const migrate = async (
-  pool0: Pool,
-  logger: Logger
-) => {
+export const migrate = async (pool0: Pool, logger: Logger) => {
   const db = pgx(pool0);
   const r = await db.q`SELECT EXISTS (
     SELECT FROM information_schema.tables
@@ -124,7 +122,7 @@ export const migrate = async (
 const getValue = async (t: PgDB, name: string) => {
   const { rows } = await t.query(
     `select v from meta where k = $1 order by ts desc limit 1`,
-    [name]
+    [name],
   );
   if (rows.length === 0) {
     return undefined;
@@ -217,7 +215,7 @@ export const getdb = (pool: Pool) => {
       tick: (name: string, n?: any) => void,
       newOffers: Offer[],
       name: string,
-      time: string | Date
+      time: string | Date,
     ) {
       return db.transaction(async (tr) => {
         // Compare with the last snapshot from this worker.
@@ -245,7 +243,7 @@ export const getdb = (pool: Pool) => {
           const ids = removed.map((x) => x.id);
           await tr.query(
             `delete from current_offers where snapshot_name = $1 and id = any($2)`,
-            [name, ids]
+            [name, ids],
           );
         }
         tick("remove");
@@ -265,7 +263,7 @@ export const getdb = (pool: Pool) => {
                   lat: offer.lat,
                   lon: offer.lon,
                 };
-              })
+              }),
           );
           await tr.batchInsert(
             "current_offers",
@@ -282,7 +280,7 @@ export const getdb = (pool: Pool) => {
                 lat: offer.lat,
                 lon: offer.lon,
               };
-            })
+            }),
           );
         }
         tick("add");
@@ -304,7 +302,7 @@ export const getdb = (pool: Pool) => {
                 offer.originalPrice,
                 name,
                 offer.id,
-              ]
+              ],
             );
           }
         }
@@ -313,10 +311,7 @@ export const getdb = (pool: Pool) => {
       });
     },
 
-    async getHistory(filter: {
-      lat: [number, number];
-      lon: [number, number];
-    }) {
+    async getHistory(filter: { lat: [number, number]; lon: [number, number] }) {
       const [x1, y1] = squareCoords(filter.lat[0], filter.lon[0]);
       const [x2, y2] = squareCoords(filter.lat[1], filter.lon[1]);
       const r =

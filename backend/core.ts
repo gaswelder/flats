@@ -1,13 +1,16 @@
 import bcrypt from "bcrypt";
 import fs from "fs";
 import * as t from "runtypes";
+import type { PgDB } from "./lib/pgx.ts";
+import type { Mailer } from "./mailer.ts";
 import { notifySubscribers } from "./notifier.ts";
+import type { OfferData } from "./offer.ts";
 import { Offer } from "./offer.ts";
 import { getStamp } from "./stamp.ts";
-import { timer } from "./timer.ts";
-import type { PgDB } from "./lib/pgx.ts";
 import type { Storage } from "./storage.ts";
-import type { Mailer } from "./mailer.ts";
+import { timer } from "./timer.ts";
+
+export type Core = ReturnType<typeof createCore>;
 
 type Logger = {
   info: (msg: string, data?: any) => void;
@@ -15,12 +18,23 @@ type Logger = {
   error: (msg: string, data?: any) => void;
 };
 
-export default (
+const OfferShape = t.Record({
+  id: t.String,
+  price: t.Number,
+  originalPrice: t.String,
+  lat: t.Number,
+  lon: t.Number,
+  rooms: t.Number,
+  address: t.String,
+  url: t.String,
+});
+
+export const createCore = (
   db: PgDB,
   storage: Storage,
   mailer: Mailer,
   log: Logger,
-  datadir: string
+  datadir: string,
 ) => {
   return {
     /**
@@ -28,12 +42,8 @@ export default (
      *
      * A worker collects a complete snapshot for its area and posts it here.
      * Here the snapshot is merged into the current offers table using diffs.
-     *
-     * @param name
-     * @param items
-     * @param time ISO time string for the snapshot's date
      */
-    async addSnapshot(name: string, items: any[], time: string) {
+    async addSnapshot(name: string, items: OfferData[], time: string) {
       log.info("got a snapshot", {
         name,
         count: items.length,
@@ -46,7 +56,7 @@ export default (
       const newOffers: Offer[] = [];
       const ids = new Set<string>();
       for (const item of items) {
-        const x = Offer.parseFromWorker(item);
+        const x = new Offer(item);
         if (!ids.has(x.id)) {
           ids.add(x.id);
           newOffers.push(x);
@@ -60,7 +70,7 @@ export default (
       const { same, updated, removed, added } = counts;
       log.info(
         `got ${newOffers.length}: =${same.length} ~${updated.length} +${added.length} -${removed.length}`,
-        { name }
+        { name },
       );
       tick("merge_snapshot");
 
@@ -68,7 +78,7 @@ export default (
       storage
         .getSubscribers()
         .then((subscribers) =>
-          notifySubscribers(subscribers, added, mailer, time)
+          notifySubscribers(subscribers, added, mailer, time),
         )
         .catch((err) => {
           log.error(`notification failed: ${err.message}`, { err });

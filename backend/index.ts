@@ -1,6 +1,6 @@
-import dotenv from "dotenv";
-import { Pool } from "pg";
-import createCore from "./core.ts";
+import type { Pool } from "pg";
+import pg from "pg";
+import { createCore } from "./core.ts";
 import { createApp } from "./http.ts";
 import { batcher } from "./lib/batcher.ts";
 import { pgx } from "./lib/pgx.ts";
@@ -9,8 +9,6 @@ import { getMailer } from "./mailer.ts";
 import { getStamp } from "./stamp.ts";
 import { getdb, migrate } from "./storage.ts";
 import { timer } from "./timer.ts";
-
-dotenv.config();
 
 const main = async () => {
   const config: Record<string, string> = {
@@ -30,7 +28,7 @@ const main = async () => {
     log.warn("ADMIN_EMAIL is not set, maintenance notifications are disabled");
   }
 
-  const pool = new Pool({ connectionString: config.DATABASE_URL });
+  const pool = new pg.Pool({ connectionString: config.DATABASE_URL });
   pool.on("error", (err: Error) => {
     log.error(`postgres pool error: ${err.message}`);
   });
@@ -71,11 +69,7 @@ const serve = async (pool: Pool, core: any, storage: any) => {
   });
 };
 
-const scheduleDaily = (
-  storage: any,
-  key: string,
-  f: () => Promise<void>
-) => {
+const scheduleDaily = (storage: any, key: string, f: () => Promise<void>) => {
   setInterval(async () => {
     const now = getStamp("daily");
     const last = await storage.getValue(key);
@@ -92,7 +86,7 @@ const pruneSnapshots = async (storage: any) => {
   // Don't need hour presision in snapshots.
   const tss = await storage.getSnapshotTimes();
   const buckets = (Object as any).groupBy(tss, (ts: Date) =>
-    ts.toISOString().substring(0, 10)
+    ts.toISOString().substring(0, 10),
   ) as Record<string, Date[]>;
   const del = batcher(100, (items: any[]) => storage.deleteSnapshots(items));
   for (const [k, v] of Object.entries(buckets)) {
@@ -104,12 +98,7 @@ const pruneSnapshots = async (storage: any) => {
   await del.end();
 };
 
-const cli = async (
-  pool: Pool,
-  srv: any,
-  cmd: string,
-  args: string[]
-) => {
+const cli = async (pool: Pool, srv: any, cmd: string, args: string[]) => {
   const storage = getdb(pool);
   switch (cmd) {
     case "setup":

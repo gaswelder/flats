@@ -3,17 +3,16 @@
   "version": "0.0.1",
   "main": "index.js",
   "license": "UNLICENSED",
+  "type": "module",
   "scripts": {
-    "dev": "tsx watch backend/index.ts",
-    "build": "tsc --noEmit",
-    "test": "mocha --node-options \"--loader tsx/esm\" backend/*.test.ts",
+    "dev": "node --env-file=.env --watch backend/index.ts",
+    "test": "node --test backend/*.test.ts",
     "build-fe": "./build-fe.sh"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "haversine-distance": "^1.2.1",
     "node-mailjet": "3",
@@ -31,20 +30,19 @@
     "@types/cors": "^2.8.0",
     "@types/express": "^4.17.0",
     "@types/mocha": "^10.0.0",
-    "@types/node": "^20.0.0",
+    "@types/node": "^26.6.5",
     "@types/pg": "^8.0.0",
     "@types/supertest": "^6.0.0",
-    "supertest": "^6.3.3",
     "esbuild": "^0.25.0",
     "eslint": "^8.24.0",
     "eslint-plugin-react": "^7.31.8",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "mocha": "^10.2.0",
     "postcss-modules": "^3.2.2",
-    "prettier": "^2.0.5",
+    "prettier": "^3.9.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "styled-components": "^5.3.5",
-    "typescript": "^5.0.0"
+    "supertest": "^6.3.3",
+    "typescript": "^7.0.2"
   }
 }

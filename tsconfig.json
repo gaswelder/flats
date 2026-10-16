@@ -8,7 +8,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "noEmit": true
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
   },
   "include": ["backend/**/*.ts", "declarations.d.ts"],
   "exclude": ["node_modules", "dist"]

@@ -1,14 +1,19 @@
-import { Pool } from "pg";
+import type { Pool } from "pg";
 
 class PGError extends Error {
-  constructor(public pgerr: Error) {
+  pgerr: Error | undefined;
+  constructor(pgerr: Error) {
     super(pgerr.message);
     this.name = "PGError";
+    this.pgerr = pgerr;
   }
 }
 
 export class Inject {
-  constructor(public value: string | number) {}
+  value: string | number;
+  constructor(value: string | number) {
+    this.value = value;
+  }
 }
 
 export type PgDB = {
@@ -80,7 +85,7 @@ export const pgx = (pool: Pool): PgDB => {
                 v((v2: any) => {
                   values.push(v2);
                   return "$" + values.length;
-                })
+                }),
               );
             } else {
               values.push(v);
