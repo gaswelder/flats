@@ -18,17 +18,6 @@ type Logger = {
   error: (msg: string, data?: any) => void;
 };
 
-const OfferShape = t.Record({
-  id: t.String,
-  price: t.Number,
-  originalPrice: t.String,
-  lat: t.Number,
-  lon: t.Number,
-  rooms: t.Number,
-  address: t.String,
-  url: t.String,
-});
-
 export const createCore = (
   db: PgDB,
   storage: Storage,
