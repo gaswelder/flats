@@ -11,39 +11,94 @@ import { getdb, migrate } from "./storage.ts";
 import { timer } from "./timer.ts";
 
 const main = async () => {
-  const config: Record<string, string> = {
+  const config = {
     DATABASE_URL: "postgres:postgres@localhost:5432",
     ADMIN_EMAIL: "",
     DATADIR: ".",
     NOTIFIER: "",
-    NOTIFIER_FROM: "",
+    NOTIFIER_FROM: "flats",
   };
   for (const k in config) {
     if (k in process.env) {
-      config[k] = process.env[k]!;
+      (config as any)[k] = process.env[k]!;
     }
   }
+  const cmd = process.argv[2];
+  const args = process.argv.slice(2);
 
   if (config.ADMIN_EMAIL === "") {
     log.warn("ADMIN_EMAIL is not set, maintenance notifications are disabled");
   }
-
   const pool = new pg.Pool({ connectionString: config.DATABASE_URL });
-  pool.on("error", (err: Error) => {
-    log.error(`postgres pool error: ${err.message}`);
-  });
-
   const mailer = getMailer(config.NOTIFIER, config.NOTIFIER_FROM);
   const db = pgx(pool);
   const storage = getdb(pool);
   const core = createCore(db, storage, mailer, log, config.DATADIR);
+  try {
+    switch (cmd) {
+      case "serve": {
+        await serve(pool, core, storage);
+        break;
+      }
+      case "setup": {
+        const u = new URL(config.DATABASE_URL);
+        const dbname = u.pathname.replace("/", "");
+        u.pathname = "";
+        const root = new pg.Pool({ connectionString: u.toString() });
+        try {
+          await root.query("create database " + dbname + ";");
+        } catch (err: any) {
+          process.stderr.write("create database failed: " + err.message + "\n");
+        }
+        root.end();
+        await migrate(pool, log);
+        break;
+      }
 
-  const cmd = process.argv[2];
-  if (cmd) {
-    await cli(pool, core, cmd, process.argv.slice(3));
-  } else {
-    await serve(pool, core, storage);
+      case "add-admin": {
+        const [name, password] = args;
+        await core.addUser(name, password, true);
+        break;
+      }
+
+      //
+      // For each date, keep only the latest snapshot and delete others.
+      //
+      case "prune-snapshots": {
+        const tss = await storage.getSnapshotTimes();
+        const buckets = (Object as any).groupBy(tss, (ts: Date) =>
+          ts.toISOString().substring(0, 10),
+        ) as Record<string, Date[]>;
+        const del = batcher(100, (items: any[]) =>
+          storage.deleteSnapshots(items),
+        );
+        for (const [k, v] of Object.entries(buckets)) {
+          if (v.length === 1) continue;
+          v.sort((a: Date, b: Date) => b.getTime() - a.getTime());
+          console.log(k, v);
+          await del.add(...v);
+        }
+        await del.end();
+        break;
+      }
+      case "create-squares":
+        for await (const s of storage.getSnapshots()) {
+          const n = await storage.generateSnapshotSquares(s.ts);
+          if (n != "exists") {
+            console.log(s.ts, n);
+          }
+        }
+        break;
+
+      default:
+        process.stderr.write(`Unknown command: ${cmd}\n`);
+        process.exit(1);
+    }
+  } catch (err: any) {
+    process.stderr.write(err.message + "\n");
+    process.exit(1);
   }
+  pool.end();
 };
 
 const serve = async (pool: Pool, core: any, storage: any) => {
@@ -79,52 +134,6 @@ const scheduleDaily = (storage: any, key: string, f: () => Promise<void>) => {
     await f();
     await storage.setValue(key, now);
   }, 1000 * 3600);
-};
-
-const pruneSnapshots = async (storage: any) => {
-  // For each date, keep only the latest snapshot and delete others.
-  // Don't need hour presision in snapshots.
-  const tss = await storage.getSnapshotTimes();
-  const buckets = (Object as any).groupBy(tss, (ts: Date) =>
-    ts.toISOString().substring(0, 10),
-  ) as Record<string, Date[]>;
-  const del = batcher(100, (items: any[]) => storage.deleteSnapshots(items));
-  for (const [k, v] of Object.entries(buckets)) {
-    if (v.length === 1) continue;
-    v.sort((a: Date, b: Date) => b.getTime() - a.getTime());
-    console.log(k, v);
-    await del.add(...v);
-  }
-  await del.end();
-};
-
-const cli = async (pool: Pool, srv: any, cmd: string, args: string[]) => {
-  const storage = getdb(pool);
-  switch (cmd) {
-    case "setup":
-      await migrate(pool, log);
-      break;
-    case "prune-snapshots":
-      await pruneSnapshots(storage);
-      break;
-    case "create-squares":
-      for await (const s of storage.getSnapshots()) {
-        const n = await storage.generateSnapshotSquares(s.ts);
-        if (n != "exists") {
-          console.log(s.ts, n);
-        }
-      }
-      break;
-    case "add-admin": {
-      const [name, password] = args;
-      await srv.addUser(name, password, true);
-      break;
-    }
-    default:
-      process.stderr.write(`Unknown command: ${cmd}\n`);
-      process.exit(1);
-  }
-  pool.end();
 };
 
 main();

@@ -1,11 +1,9 @@
 import type { Pool } from "pg";
 
 class PGError extends Error {
-  pgerr: Error | undefined;
   constructor(pgerr: Error) {
     super(pgerr.message);
     this.name = "PGError";
-    this.pgerr = pgerr;
   }
 }
 
